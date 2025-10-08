@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
-MyPluginModule::Engine.routes.draw do
-  get "/examples" => "examples#index"
-  # define routes here
+ScryfallPlugin::Engine.routes.draw do
+  # No routes needed for this plugin - it only processes markdown
 end
 
-Discourse::Application.routes.draw { mount ::MyPluginModule::Engine, at: "my-plugin" }
+#Discourse::Application.routes.draw { mount ::ScryfallPlugin::Engine, at: "scryfall" }

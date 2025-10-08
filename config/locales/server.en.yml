@@ -1,1 +1,3 @@
 en:
+  site_settings:
+    scryfall_plugin_enabled: "Enable Scryfall card name embed plugin"
