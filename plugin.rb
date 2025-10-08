@@ -17,27 +17,38 @@ end
 require_relative "lib/my_plugin_module/engine"
 
 after_initialize do
-  # Register markdown processor for Scryfall card links
-  on(:before_post_process_cooked) do |doc, post|
+  # Process Scryfall syntax during markdown preprocessing
+  on(:reduce_cooked) do |fragment, post|
     if SiteSetting.scryfall_plugin_enabled
-      ScryfallPlugin.process_scryfall_links(doc)
+      ScryfallPlugin.process_scryfall_links(fragment)
     end
   end
+
+  # Register Onebox provider for Scryfall URLs
+  #Onebox.options = Onebox.options.merge({
+  #  load_paths: [File.join(Rails.root, "plugins", "discourse-plugin-scryfall", "lib", "onebox")]
+  #})
 end
 
 module ::ScryfallPlugin
-  def self.process_scryfall_links(doc)
-    doc.css('p').each do |paragraph|
+  def self.process_scryfall_links(fragment)
+    fragment.css('p').each do |paragraph|
       next if paragraph.content.exclude?('[[')
       
-      new_html = paragraph.inner_html.gsub(/\[\[([^\]]+)\]\]/) do |match|
+      # Process each card reference
+      paragraph.inner_html.gsub!(/\[\[([^\]]+)\]\]/) do |match|
         card_name = $1.strip
         encoded_name = CGI.escape(card_name)
         scryfall_url = "https://scryfall.com/search?q=#{encoded_name}&unique=cards&as=grid&order=name"
-        "<a href=\"#{scryfall_url}\">#{card_name}</a>"
+        
+        # Insert as new paragraph after current one for proper Onebox processing
+        new_p = fragment.document.create_element('p')
+        new_p.inner_html = "<a href=\"#{scryfall_url}\" class=\"onebox\" target=\"_blank\">#{scryfall_url}</a>"
+        paragraph.add_next_sibling(new_p)
+        
+        # Replace original with just the card name as text
+        card_name
       end
-      
-      paragraph.inner_html = new_html
     end
   end
 end
