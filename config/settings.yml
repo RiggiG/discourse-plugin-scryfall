@@ -2,3 +2,10 @@ plugins:
   scryfall_plugin_enabled:
     default: true
     client: true
+  scryfall_card_display_type:
+    type: enum
+    default: onebox
+    choices:
+      - onebox
+      - custom
+    client: true
