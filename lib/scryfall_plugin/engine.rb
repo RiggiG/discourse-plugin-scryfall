@@ -1,9 +1,10 @@
+
 # frozen_string_literal: true
 
-module ::MyPluginModule
+module ::ScryfallPlugin
   class Engine < ::Rails::Engine
-    engine_name PLUGIN_NAME
-    isolate_namespace MyPluginModule
+    engine_name "scryfall_plugin"
+    isolate_namespace ScryfallPlugin
     config.autoload_paths << File.join(config.root, "lib")
     scheduled_job_dir = "#{config.root}/app/jobs/scheduled"
     config.to_prepare do
