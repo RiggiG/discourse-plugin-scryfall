@@ -10,8 +10,6 @@
 
 enabled_site_setting :scryfall_plugin_enabled
 
-register_site_setting_type :enum, ScryfallCardDisplayType
-
 module ::ScryfallPlugin
   PLUGIN_NAME = "discourse-plugin-scryfall"
 end
