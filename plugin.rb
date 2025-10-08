@@ -14,7 +14,7 @@ module ::ScryfallPlugin
   PLUGIN_NAME = "discourse-plugin-scryfall"
 end
 
-require_relative "lib/my_plugin_module/engine"
+require_relative "lib/scryfall_plugin/engine"
 
 after_initialize do
   # Process Scryfall syntax during markdown preprocessing
