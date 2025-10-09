@@ -2,7 +2,7 @@
 
 module ::ScryfallPlugin
   class Engine < ::Rails::Engine
-    engine_name "scryfall_plugin"
+    engine_name PLUGIN_NAME
     isolate_namespace ScryfallPlugin
   end
 end
