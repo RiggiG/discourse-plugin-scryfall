@@ -3,7 +3,7 @@
 # name: discourse-plugin-scryfall
 # about: Converts [[card name]] to Scryfall search links for Onebox embeds
 # meta_topic_id: TODO
-# version: 0.0.6
+# version: 0.1.0
 # authors: RiggiG
 # url: TODO
 # required_version: 2.7.0
