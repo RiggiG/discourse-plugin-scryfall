@@ -18,10 +18,10 @@ require_relative "lib/scryfall_plugin/engine"
 
 after_initialize do
   # Process raw markdown before post creation
-  on(:before_create_post) do |post_creator|
-    if SiteSetting.scryfall_plugin_enabled
+  on(:before_create_post) do |post|
+    if SiteSetting.scryfall_plugin_enabled && post.raw
       Rails.logger.info "Scryfall: Processing raw content before post creation"
-      post_creator.opts[:raw] = ScryfallPlugin::CardHandler.process_raw_content(post_creator.opts[:raw])
+      post.raw = ScryfallPlugin::CardHandler.process_raw_content(post.raw)
     end
   end
 end
