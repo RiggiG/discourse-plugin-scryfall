@@ -17,8 +17,8 @@ end
 require_relative "lib/scryfall_plugin/engine"
 
 after_initialize do
-  # Helper method to process scryfall content
-  def process_scryfall_content(post)
+  # Helper lambda to process scryfall content
+  process_scryfall_content = lambda do |post|
     if SiteSetting.scryfall_plugin_enabled && post.raw
       Rails.logger.info "Scryfall: Processing raw content"
       post.raw = ScryfallPlugin::CardHandler.process_raw_content(post.raw)
@@ -27,11 +27,11 @@ after_initialize do
 
   # Process raw markdown before post creation
   on(:before_create_post) do |post|
-    process_scryfall_content(post)
+    process_scryfall_content.call(post)
   end
 
   # Process raw markdown before post update
   on(:before_update_post) do |post|
-    process_scryfall_content(post)
+    process_scryfall_content.call(post)
   end
 end
