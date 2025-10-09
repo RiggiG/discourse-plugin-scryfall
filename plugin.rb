@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-# name: discourse-plugin-scryfall
+# name: discourse-scryfall
 # about: Converts [[card name]] to Scryfall search links for Onebox embeds
 # meta_topic_id: TODO
-# version: 0.0.1
+# version: 0.0.2
 # authors: Discourse
 # url: TODO
 # required_version: 2.7.0
@@ -11,7 +11,7 @@
 enabled_site_setting :scryfall_plugin_enabled
 
 module ::ScryfallPlugin
-  PLUGIN_NAME = "discourse-plugin-scryfall"
+  PLUGIN_NAME = "discourse-scryfall"
 end
 
 require_relative "lib/scryfall_plugin/engine"
