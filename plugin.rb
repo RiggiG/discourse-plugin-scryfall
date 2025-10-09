@@ -17,10 +17,16 @@ end
 require_relative "lib/scryfall_plugin/engine"
 
 after_initialize do
-  # Process Scryfall syntax during markdown preprocessing
+  # Custom onebox engine is automatically loaded from lib/onebox/
+  # No registration needed
+
+  # Process Scryfall syntax during post processing
   on(:before_post_process_cooked) do |doc, post|
     if SiteSetting.scryfall_plugin_enabled
+      Rails.logger.info "Scryfall: Processing post #{post.id}"
       ScryfallPlugin::CardHandler.process_links(doc)
+    else
+      Rails.logger.info "Scryfall: Plugin disabled"
     end
   end
 end
