@@ -9,7 +9,7 @@ module ::ScryfallPlugin
       
       Rails.logger.info "Scryfall: Processing raw content with [[ syntax"
       
-      raw_content.gsub(/\[\[([^\]]+)\]\]/) do |match|
+      raw_content.gsub(/\\*?\[\\*?\[([^\\\]]+?)\\*\]\\*\]/) do |match|
         card_name = $1.strip
         encoded_name = CGI.escape(card_name)
         scryfall_url = "https://scryfall.com/search?q=#{encoded_name}&unique=cards&as=grid&order=name"
