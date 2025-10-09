@@ -18,22 +18,22 @@ require_relative "lib/scryfall_plugin/engine"
 
 after_initialize do
   # Process raw markdown before post creation
-  #on(:before_create_post) do |post|
-  #  if SiteSetting.scryfall_plugin_enabled && post.raw
-  #    Rails.logger.info "Scryfall: Processing raw content before creation"
-  #    post.raw = ScryfallPlugin::CardHandler.process_raw_content(post.raw)
-  #  end
-  #end
-
-  # Process raw markdown during cooking (handles edits)
-  on(:before_post_process_cooked) do |doc, post|
+  on(:before_create_post) do |post|
     if SiteSetting.scryfall_plugin_enabled && post.raw
-      Rails.logger.info "Scryfall: Processing raw content during cooking"
-      original_raw = post.raw
-      processed_raw = ScryfallPlugin::CardHandler.process_raw_content(post.raw)
-      if processed_raw != original_raw
-        post.raw = processed_raw
-      end
+      Rails.logger.info "Scryfall: Processing raw content before creation"
+      post.raw = ScryfallPlugin::CardHandler.process_raw_content(post.raw)
     end
   end
+
+  # Process raw markdown during cooking (handles both creation and edits)
+  #on(:before_post_process_cooked) do |doc, post|
+  #  if SiteSetting.scryfall_plugin_enabled && post.raw
+  #    Rails.logger.info "Scryfall: Processing raw content during cooking"
+  #    original_raw = post.raw
+  #    processed_raw = ScryfallPlugin::CardHandler.process_raw_content(post.raw)
+  #    if processed_raw != original_raw
+  #      post.raw = processed_raw
+  #    end
+  #  end
+  #end
 end
