@@ -3,7 +3,7 @@
 # name: discourse-scryfall
 # about: Converts [[card name]] to Scryfall search links for Onebox embeds
 # meta_topic_id: TODO
-# version: 0.0.3
+# version: 0.0.4
 # authors: Discourse
 # url: TODO
 # required_version: 2.7.0
@@ -20,13 +20,11 @@ after_initialize do
   # Custom onebox engine is automatically loaded from lib/onebox/
   # No registration needed
 
-  # Process Scryfall syntax during post processing
-  on(:before_post_process_cooked) do |doc, post|
+  # Process raw markdown before post creation
+  on(:before_create_post) do |post_creator|
     if SiteSetting.scryfall_plugin_enabled
-      Rails.logger.info "Scryfall: Processing post #{post.id}"
-      ScryfallPlugin::CardHandler.process_links(doc)
-    else
-      Rails.logger.info "Scryfall: Plugin disabled"
+      Rails.logger.info "Scryfall: Processing raw content before post creation"
+      post_creator.opts[:raw] = ScryfallPlugin::CardHandler.process_raw_content(post_creator.opts[:raw])
     end
   end
 end
