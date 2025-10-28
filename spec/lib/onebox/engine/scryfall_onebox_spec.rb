@@ -15,7 +15,8 @@ describe Onebox::Engine::ScryfallOnebox do
     stub_request(:head, card_url).to_return(status: 200)
     stub_request(:get, card_url).to_return(
       status: 200,
-      body: onebox_response("scryfall_search")
+      body: onebox_response("scryfall_search"),
+      headers: { "Content-Type" => "text/html" }
     )
   end
 
@@ -50,54 +51,54 @@ describe Onebox::Engine::ScryfallOnebox do
   end
 
   describe "#to_html" do
-    it "includes the scryfall-onebox class" do
-      onebox = described_class.new(search_url)
-      html = onebox.to_html
+    let(:onebox) { described_class.new(search_url) }
+    let(:html) { onebox.to_html }
+
+    it "returns HTML content" do
       expect(html).to be_present
+    end
+
+    it "includes the scryfall-onebox class" do
       expect(html).to include("scryfall-onebox")
     end
 
     it "includes the card image" do
-      onebox = described_class.new(search_url)
-      html = onebox.to_html
       expect(html).to include("scryfall-card-image")
     end
 
     it "includes the Scryfall favicon" do
-      onebox = described_class.new(search_url)
-      html = onebox.to_html
       expect(html).to include("scryfall.com/favicon.ico")
     end
 
     it "returns nil if OpenGraph data is missing" do
       stub_request(:get, card_url).to_return(
         status: 200,
-        body: "<html><head></head><body>No OpenGraph</body></html>"
+        body: "<html><head></head><body>No OpenGraph</body></html>",
+        headers: { "Content-Type" => "text/html" }
       )
-      onebox = described_class.new(search_url)
-      expect(onebox.to_html).to be_nil
+      expect(described_class.new(search_url).to_html).to be_nil
     end
   end
 
   describe "#placeholder_html" do
-    it "includes the scryfall-card-link class" do
-      onebox = described_class.new(search_url)
-      html = onebox.placeholder_html
+    let(:onebox) { described_class.new(search_url) }
+    let(:html) { onebox.placeholder_html }
+
+    it "returns HTML content" do
       expect(html).to be_present
+    end
+
+    it "includes the scryfall-card-link class" do
       expect(html).to include("scryfall-card-link")
     end
 
     it "includes data attributes for tooltip" do
-      onebox = described_class.new(search_url)
-      html = onebox.placeholder_html
       expect(html).to include("data-card-name")
       expect(html).to include("data-card-image")
       expect(html).to include("data-card-description")
     end
 
     it "uses the OpenGraph title as link text" do
-      onebox = described_class.new(search_url)
-      html = onebox.placeholder_html
       expect(html).to include(">Lightning Bolt<")
     end
 
@@ -116,7 +117,8 @@ describe Onebox::Engine::ScryfallOnebox do
       stub_request(:head, malicious_card_url).to_return(status: 200)
       stub_request(:get, malicious_card_url).to_return(
         status: 200,
-        body: onebox_response("scryfall_malicious")
+        body: onebox_response("scryfall_malicious"),
+        headers: { "Content-Type" => "text/html" }
       )
 
       onebox = described_class.new(malicious_url)
