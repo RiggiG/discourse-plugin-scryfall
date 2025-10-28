@@ -6,23 +6,34 @@ module ScryfallPlugin
       # Handle Scryfall search URLs by following redirects
       if url =~ /scryfall\.com\/search/
         begin
-          final_url = FinalDestination.new(url, 
+          Rails.logger.info "Scryfall: Attempting to resolve search URL: #{url}"
+          
+          final_url = FinalDestination.new(
+            url,
             validate_uri: true,
             max_redirects: 5,
             follow_canonical: false
           ).resolve
           
+          Rails.logger.info "Scryfall: FinalDestination returned: #{final_url.inspect}"
+          
           # If we got a redirect to a card page, use that instead
           if final_url && final_url.to_s != url && final_url.to_s =~ /scryfall\.com\/card/
             Rails.logger.info "Scryfall: Resolved search URL #{url} to #{final_url}"
             url = final_url.to_s
+          else
+            Rails.logger.info "Scryfall: No valid card redirect found, using original URL"
           end
         rescue => e
-          Rails.logger.warn("Scryfall: Failed to resolve redirect: #{e.message}")
+          Rails.logger.error "Scryfall: Failed to resolve redirect: #{e.class} - #{e.message}"
+          Rails.logger.error e.backtrace.join("\n")
         end
       end
       
-      super(url)
+      Rails.logger.info "Scryfall: Calling super with URL: #{url}"
+      result = super(url)
+      Rails.logger.info "Scryfall: Super returned: #{result.inspect}"
+      result
     end
   end
 end
