@@ -16,9 +16,13 @@ end
 
 require_relative "lib/scryfall_plugin/engine"
 
-after_initialize do
-  register_asset "stylesheets/scryfall.scss"
+# Load the custom onebox engine before Discourse initializes
+require_relative "lib/onebox/engine/scryfall_onebox"
 
+after_initialize do
+  # Register client-side assets
+  register_asset "stylesheets/scryfall.scss"
+  
   # Process raw markdown before post creation
   on(:before_create_post) do |post|
     if SiteSetting.scryfall_plugin_enabled && post.raw
