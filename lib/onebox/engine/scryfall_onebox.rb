@@ -11,9 +11,9 @@ module Onebox
 
       always_https
 
-      # Higher priority than allowlisted generic (which is typically 100)
+      # Higher priority than allowlisted generic (200)
       def self.priority
-        1
+        50
       end
 
       def to_html

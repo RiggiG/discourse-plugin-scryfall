@@ -22,7 +22,7 @@ require_relative "lib/onebox/engine/scryfall_onebox"
 after_initialize do
   # Register client-side assets
   register_asset "stylesheets/scryfall.scss"
-  
+
   # Process raw markdown before post creation
   on(:before_create_post) do |post|
     if SiteSetting.scryfall_plugin_enabled && post.raw
@@ -33,4 +33,9 @@ after_initialize do
 
   # Extend PostRevisor to handle edits
   PostRevisor.prepend(ScryfallPlugin::PostRevisorExtension)
+end
+
+# Load specs in test environment
+if Rails.env.test?
+  require_relative "spec/lib/onebox/engine/scryfall_onebox_spec"
 end
