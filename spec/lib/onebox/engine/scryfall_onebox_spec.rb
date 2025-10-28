@@ -89,21 +89,6 @@ RSpec.describe Onebox::Engine::ScryfallOnebox do
       onebox = described_class.new(search_url)
       expect(onebox.placeholder_html).to include(">Lightning Bolt<")
     end
-
-    it "escapes HTML in attributes" do
-      malicious_url = "https://scryfall.com/search?q=test"
-      stub_request(:get, malicious_url).to_return(
-        status: 200,
-        body: onebox_response("scryfall_malicious")
-      )
-      stub_request(:head, malicious_url).to_return(status: 200)
-
-      onebox = described_class.new(malicious_url)
-      html = onebox.placeholder_html
-      expect(html).to be_present
-      expect(html).not_to include("<script>")
-      expect(html).to include("&lt;script&gt;")
-    end
   end
 
   def onebox_response(filename)

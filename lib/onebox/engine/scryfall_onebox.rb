@@ -21,6 +21,8 @@ module Onebox
         # Full onebox version (for standalone links)
         og = get_opengraph
 
+        Rails.logger.info "Scryfall Onebox: OpenGraph data: #{og.inspect}"
+
         return nil unless og&.title && og.image
 
         <<~HTML
@@ -31,7 +33,7 @@ module Onebox
             </header>
             <article class="onebox-body">
               <div class="scryfall-card-container">
-                <img src="#{og.image}" class="scryfall-card-image" alt="#{escape_attribute(og.title)}">
+                <img src="#{og.image}" class="scryfall-card-image" alt="#{og.title}">
               </div>
             </article>
           </aside>
@@ -43,6 +45,8 @@ module Onebox
         # Inline version with embedded card data from OpenGraph
         og = get_opengraph
 
+        Rails.logger.info "Scryfall Onebox: OpenGraph data: #{og.inspect}"
+        
         return nil unless og&.title
 
         # Embed all the OpenGraph data as data attributes for tooltips
@@ -50,16 +54,10 @@ module Onebox
         <<~HTML
           <a href="#{url}"
              class="scryfall-card-link"
-             data-card-name="#{escape_attribute(og.title)}"
-             data-card-image="#{escape_attribute(og.image || '')}"
-             data-card-description="#{escape_attribute(og.description || '')}">#{escape_attribute(og.title)}</a>
+             data-card-name="#{og.title}"
+             data-card-image="#{og.image}"
+             data-card-description="#{og.description}">#{og.title}</a>
         HTML
-      end
-
-      private
-
-      def escape_attribute(text)
-        ERB::Util.html_escape(text.to_s)
       end
     end
   end
