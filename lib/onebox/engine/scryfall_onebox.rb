@@ -6,18 +6,21 @@ module Onebox
       include Engine
       include StandardEmbed
 
-      matches_regexp(/^https?:\/\/scryfall\.com\/search\?q=(.+?)(?:&|$)/)
+      # Match both search URLs and direct card URLs
+      matches_regexp(/^https?:\/\/(?:www\.)?scryfall\.com\/(?:search|card)/)
 
       always_https
 
+      # Higher priority than allowlisted generic (which is typically 100)
       def self.priority
-        0
+        1
       end
 
       def to_html
+        Rails.logger.info "Scryfall Onebox: to_html called for #{url}"
         # Full onebox version (for standalone links)
         og = get_opengraph
-        
+
         return nil unless og&.title && og.image
 
         <<~HTML
@@ -36,33 +39,24 @@ module Onebox
       end
 
       def placeholder_html
+        Rails.logger.info "Scryfall Onebox: placeholder_html called for #{url}"
         # Inline version with embedded card data from OpenGraph
         og = get_opengraph
-        
+
         return nil unless og&.title
 
         # Embed all the OpenGraph data as data attributes for tooltips
-        # Use the search query as the link text to preserve [[Card Name]]
+        # Use OpenGraph title as the link text
         <<~HTML
-          <a href="#{url}" 
-             class="scryfall-card-link" 
+          <a href="#{url}"
+             class="scryfall-card-link"
              data-card-name="#{escape_attribute(og.title)}"
              data-card-image="#{escape_attribute(og.image || '')}"
-             data-card-description="#{escape_attribute(og.description || '')}">#{escape_attribute(search_query)}</a>
+             data-card-description="#{escape_attribute(og.description || '')}">#{escape_attribute(og.title)}</a>
         HTML
       end
 
       private
-
-      def search_query
-        @search_query ||= begin
-          # Extract the query parameter and decode it
-          URI.decode_www_form_component(match[1])
-        rescue => e
-          Rails.logger.warn("Scryfall: Failed to decode search query: #{e.message}")
-          "Card"
-        end
-      end
 
       def escape_attribute(text)
         ERB::Util.html_escape(text.to_s)
