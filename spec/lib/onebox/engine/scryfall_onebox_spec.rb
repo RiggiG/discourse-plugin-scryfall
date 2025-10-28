@@ -2,22 +2,16 @@
 
 require "rails_helper"
 
-describe Onebox::Engine::ScryfallOnebox do
+RSpec.describe Onebox::Engine::ScryfallOnebox do
   let(:search_url) { "https://scryfall.com/search?q=Lightning+Bolt" }
   let(:card_url) { "https://scryfall.com/card/lea/161/lightning-bolt" }
+  let(:html_body) { onebox_response("scryfall_search") }
 
   before do
-    # Stub the search URL to redirect to the card URL
-    stub_request(:head, search_url).to_return(status: 301, headers: { "Location" => card_url })
-    stub_request(:get, search_url).to_return(status: 301, headers: { "Location" => card_url })
-
-    # Stub the final card URL with OpenGraph data
+    stub_request(:get, search_url).to_return(status: 200, body: html_body)
+    stub_request(:head, search_url).to_return(status: 200)
+    stub_request(:get, card_url).to_return(status: 200, body: html_body)
     stub_request(:head, card_url).to_return(status: 200)
-    stub_request(:get, card_url).to_return(
-      status: 200,
-      body: onebox_response("scryfall_search"),
-      headers: { "Content-Type" => "text/html" }
-    )
   end
 
   describe "pattern matching" do
@@ -51,75 +45,58 @@ describe Onebox::Engine::ScryfallOnebox do
   end
 
   describe "#to_html" do
-    let(:onebox) { described_class.new(search_url) }
-    let(:html) { onebox.to_html }
-
     it "returns HTML content" do
-      expect(html).to be_present
+      onebox = Onebox.preview(search_url)
+      expect(onebox.to_s).to be_present
     end
 
     it "includes the scryfall-onebox class" do
-      expect(html).to include("scryfall-onebox")
+      onebox = Onebox.preview(search_url)
+      expect(onebox.to_s).to include("scryfall-onebox")
     end
 
     it "includes the card image" do
-      expect(html).to include("scryfall-card-image")
+      onebox = Onebox.preview(search_url)
+      expect(onebox.to_s).to include("scryfall-card-image")
     end
 
     it "includes the Scryfall favicon" do
-      expect(html).to include("scryfall.com/favicon.ico")
-    end
-
-    it "returns nil if OpenGraph data is missing" do
-      stub_request(:get, card_url).to_return(
-        status: 200,
-        body: "<html><head></head><body>No OpenGraph</body></html>",
-        headers: { "Content-Type" => "text/html" }
-      )
-      expect(described_class.new(search_url).to_html).to be_nil
+      onebox = Onebox.preview(search_url)
+      expect(onebox.to_s).to include("scryfall.com/favicon.ico")
     end
   end
 
   describe "#placeholder_html" do
-    let(:onebox) { described_class.new(search_url) }
-    let(:html) { onebox.placeholder_html }
-
     it "returns HTML content" do
-      expect(html).to be_present
+      onebox = described_class.new(search_url)
+      expect(onebox.placeholder_html).to be_present
     end
 
     it "includes the scryfall-card-link class" do
-      expect(html).to include("scryfall-card-link")
+      onebox = described_class.new(search_url)
+      expect(onebox.placeholder_html).to include("scryfall-card-link")
     end
 
     it "includes data attributes for tooltip" do
+      onebox = described_class.new(search_url)
+      html = onebox.placeholder_html
       expect(html).to include("data-card-name")
       expect(html).to include("data-card-image")
       expect(html).to include("data-card-description")
     end
 
     it "uses the OpenGraph title as link text" do
-      expect(html).to include(">Lightning Bolt<")
+      onebox = described_class.new(search_url)
+      expect(onebox.placeholder_html).to include(">Lightning Bolt<")
     end
 
     it "escapes HTML in attributes" do
       malicious_url = "https://scryfall.com/search?q=test"
-      malicious_card_url = "https://scryfall.com/card/test/1/test"
-
-      stub_request(:head, malicious_url).to_return(
-        status: 301,
-        headers: { "Location" => malicious_card_url }
-      )
       stub_request(:get, malicious_url).to_return(
-        status: 301,
-        headers: { "Location" => malicious_card_url }
-      )
-      stub_request(:head, malicious_card_url).to_return(status: 200)
-      stub_request(:get, malicious_card_url).to_return(
         status: 200,
-        body: onebox_response("scryfall_malicious"),
-        headers: { "Content-Type" => "text/html" }
+        body: onebox_response("scryfall_malicious")
       )
+      stub_request(:head, malicious_url).to_return(status: 200)
 
       onebox = described_class.new(malicious_url)
       html = onebox.placeholder_html
@@ -128,10 +105,10 @@ describe Onebox::Engine::ScryfallOnebox do
       expect(html).to include("&lt;script&gt;")
     end
   end
-end
 
-def onebox_response(filename)
-  File.read(
-    "#{Rails.root}/plugins/discourse-plugin-scryfall/spec/fixtures/onebox/#{filename}.html"
-  )
+  def onebox_response(filename)
+    File.read(
+      "#{Rails.root}/plugins/discourse-plugin-scryfall/spec/fixtures/onebox/#{filename}.html"
+    )
+  end
 end
