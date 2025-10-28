@@ -14,6 +14,18 @@ RSpec.describe Onebox::Engine::ScryfallOnebox do
     stub_request(:head, card_url).to_return(status: 200)
   end
 
+  describe "engine selection" do
+    it "uses ScryfallOnebox for search URLs instead of generic engine" do
+      onebox = Onebox.preview(search_url)
+      expect(onebox).to be_a(described_class)
+    end
+
+    it "uses ScryfallOnebox for card URLs instead of generic engine" do
+      onebox = Onebox.preview(card_url)
+      expect(onebox).to be_a(described_class)
+    end
+  end
+
   describe "pattern matching" do
     let(:matcher) { described_class.class_variable_get(:@@matcher) }
 
