@@ -16,9 +16,6 @@ end
 
 require_relative "lib/scryfall_plugin/engine"
 
-# Load the custom onebox engine before Discourse initializes
-require_relative "lib/onebox/engine/scryfall_onebox"
-
 after_initialize do
   # Register client-side assets
   register_asset "stylesheets/scryfall.scss"
