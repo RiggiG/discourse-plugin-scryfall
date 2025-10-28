@@ -16,13 +16,13 @@ RSpec.describe Onebox::Engine::ScryfallOnebox do
 
   describe "engine selection" do
     it "uses ScryfallOnebox for search URLs instead of generic engine" do
-      onebox = Onebox.preview(search_url)
-      expect(onebox).to be_a(described_class)
+      preview = Onebox.preview(search_url)
+      expect(preview.engine_class).to eq(described_class)
     end
 
     it "uses ScryfallOnebox for card URLs instead of generic engine" do
-      onebox = Onebox.preview(card_url)
-      expect(onebox).to be_a(described_class)
+      preview = Onebox.preview(card_url)
+      expect(preview.engine_class).to eq(described_class)
     end
   end
 
