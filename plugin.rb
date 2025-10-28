@@ -34,8 +34,3 @@ after_initialize do
   # Extend PostRevisor to handle edits
   PostRevisor.prepend(ScryfallPlugin::PostRevisorExtension)
 end
-
-# Load specs in test environment
-if Rails.env.test?
-  require_relative "spec/lib/onebox/engine/scryfall_onebox_spec"
-end
