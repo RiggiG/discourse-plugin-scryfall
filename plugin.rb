@@ -3,7 +3,7 @@
 # name: discourse-plugin-scryfall
 # about: Converts [[card name]] to Scryfall search links for Onebox embeds
 # meta_topic_id: TODO
-# version: 0.1.0
+# version: 0.2.0
 # authors: RiggiG
 # url: TODO
 # required_version: 2.7.0
@@ -17,6 +17,12 @@ end
 require_relative "lib/scryfall_plugin/engine"
 
 after_initialize do
+  # Require the custom Onebox engine
+  require_relative "lib/onebox/engine/scryfall_onebox"
+
+  # Register it with Discourse's Onebox system
+  Onebox.add_engine(Onebox::Engine::ScryfallOnebox) if defined?(Onebox::Engine::ScryfallOnebox)
+
   # Process raw markdown before post creation
   on(:before_create_post) do |post|
     if SiteSetting.scryfall_plugin_enabled && post.raw
