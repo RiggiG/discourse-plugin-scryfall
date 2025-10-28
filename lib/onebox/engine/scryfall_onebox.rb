@@ -10,6 +10,10 @@ module Onebox
 
       always_https
 
+      def self.priority
+        0
+      end
+
       def to_html
         # Full onebox version (for standalone links)
         og = get_opengraph
