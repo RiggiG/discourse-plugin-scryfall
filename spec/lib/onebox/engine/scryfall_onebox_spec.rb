@@ -11,25 +11,27 @@ describe Onebox::Engine::ScryfallOnebox do
     )
   end
 
-  describe ".matches_regexp" do
+  describe "pattern matching" do
+    let(:matcher) { described_class.class_variable_get(:@@matcher) }
+
     it "matches scryfall.com search URLs" do
-      expect(described_class.matches_regexp.match("https://scryfall.com/search?q=Lightning+Bolt")).not_to be_nil
+      expect(matcher).to match("https://scryfall.com/search?q=Lightning+Bolt")
     end
 
     it "matches scryfall.com card URLs" do
-      expect(described_class.matches_regexp.match("https://scryfall.com/card/lea/161/lightning-bolt")).not_to be_nil
+      expect(matcher).to match("https://scryfall.com/card/lea/161/lightning-bolt")
     end
 
     it "matches www.scryfall.com URLs" do
-      expect(described_class.matches_regexp.match("https://www.scryfall.com/search?q=Sol+Ring")).not_to be_nil
+      expect(matcher).to match("https://www.scryfall.com/search?q=Sol+Ring")
     end
 
     it "does not match other scryfall.com paths" do
-      expect(described_class.matches_regexp.match("https://scryfall.com/sets")).to be_nil
+      expect(matcher).not_to match("https://scryfall.com/sets")
     end
 
     it "does not match non-scryfall URLs" do
-      expect(described_class.matches_regexp.match("https://example.com/search")).to be_nil
+      expect(matcher).not_to match("https://example.com/search")
     end
   end
 
