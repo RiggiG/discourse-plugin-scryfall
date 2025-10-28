@@ -55,7 +55,7 @@
     background: var(--secondary);
     border: 1px solid var(--primary-low);
     border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 30%);
     display: flex;
     max-width: 450px;
     overflow: hidden;
@@ -102,6 +102,7 @@
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
