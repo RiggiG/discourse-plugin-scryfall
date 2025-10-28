@@ -17,11 +17,7 @@ end
 require_relative "lib/scryfall_plugin/engine"
 
 after_initialize do
-  # Require the custom Onebox engine
-  require_relative "lib/onebox/engine/scryfall_onebox"
-
-  # Register it with Discourse's Onebox system
-  Onebox.add_engine(Onebox::Engine::ScryfallOnebox) if defined?(Onebox::Engine::ScryfallOnebox)
+  register_asset "stylesheets/scryfall.scss"
 
   # Process raw markdown before post creation
   on(:before_create_post) do |post|
