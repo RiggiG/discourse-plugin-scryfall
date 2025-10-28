@@ -16,47 +16,26 @@ module Onebox
         50
       end
 
-      def to_html
-        Rails.logger.info "Scryfall Onebox: to_html called for #{url}"
-        # Full onebox version (for standalone links)
-        og = get_opengraph
-
-        Rails.logger.info "Scryfall Onebox: OpenGraph data: #{og.inspect}"
-
-        return nil unless og&.title && og.image
-
-        <<~HTML
-          <aside class="onebox scryfall-onebox" data-onebox-src="#{url}">
-            <header class="source">
-              <img src="https://scryfall.com/favicon.ico" class="site-icon" width="16" height="16">
-              <a href="#{url}" target="_blank" rel="noopener nofollow ugc">Scryfall</a>
-            </header>
-            <article class="onebox-body">
-              <div class="scryfall-card-container">
-                <img src="#{og.image}" class="scryfall-card-image" alt="#{og.title}">
-              </div>
-            </article>
-          </aside>
-        HTML
-      end
+      # Use the standard OpenGraph-based full onebox from StandardEmbed
+      # No need to override to_html - the parent does exactly what we want
 
       def placeholder_html
-        Rails.logger.info "Scryfall Onebox: placeholder_html called for #{url}"
-        # Inline version with embedded card data from OpenGraph
+        # Inline version with embedded card data from OpenGraph for hover tooltips
         og = get_opengraph
-
-        Rails.logger.info "Scryfall Onebox: OpenGraph data: #{og.inspect}"
         
         return nil unless og&.title
 
+        escaped_url = ::Onebox::Helpers.normalize_url_for_output(url)
+        escaped_title = ::Onebox::Helpers.html_escape(og.title)
+        escaped_description = ::Onebox::Helpers.html_escape(og.description || "")
+
         # Embed all the OpenGraph data as data attributes for tooltips
-        # Use OpenGraph title as the link text
         <<~HTML
-          <a href="#{url}"
+          <a href="#{escaped_url}"
              class="scryfall-card-link"
-             data-card-name="#{og.title}"
+             data-card-name="#{escaped_title}"
              data-card-image="#{og.image}"
-             data-card-description="#{og.description}">#{og.title}</a>
+             data-card-description="#{escaped_description}">#{escaped_title}</a>
         HTML
       end
     end

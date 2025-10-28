@@ -14,7 +14,6 @@ RSpec.describe Onebox::Engine::ScryfallOnebox do
     stub_request(:head, card_url).to_return(status: 200)
   end
 
-
   describe "pattern matching" do
     let(:matcher) { described_class.class_variable_get(:@@matcher) }
 
@@ -51,19 +50,16 @@ RSpec.describe Onebox::Engine::ScryfallOnebox do
       expect(onebox.to_s).to be_present
     end
 
-    it "includes the scryfall-onebox class" do
+    it "includes standard onebox structure" do
       onebox = Onebox.preview(search_url)
-      expect(onebox.to_s).to include("scryfall-onebox")
+      html = onebox.to_s
+      expect(html).to include("onebox")
+      expect(html).to include("onebox-body")
     end
 
     it "includes the card image" do
       onebox = Onebox.preview(search_url)
-      expect(onebox.to_s).to include("scryfall-card-image")
-    end
-
-    it "includes the Scryfall favicon" do
-      onebox = Onebox.preview(search_url)
-      expect(onebox.to_s).to include("scryfall.com/favicon.ico")
+      expect(onebox.to_s).to include("<img")
     end
   end
 

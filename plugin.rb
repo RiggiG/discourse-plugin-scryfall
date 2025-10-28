@@ -23,11 +23,24 @@ after_initialize do
   # Register client-side assets
   register_asset "stylesheets/scryfall.scss"
 
+  # Extend InlineOneboxer to handle Scryfall redirects
+  require_dependency 'inline_oneboxer'
+  InlineOneboxer.singleton_class.prepend(ScryfallPlugin::InlineOneboxExtension)
+
   # Process raw markdown before post creation
   on(:before_create_post) do |post|
     if SiteSetting.scryfall_plugin_enabled && post.raw
       Rails.logger.info "Scryfall: Processing raw content before creation"
       post.raw = ScryfallPlugin::CardHandler.process_raw_content(post.raw)
+    end
+  end
+
+  # Add custom class to Scryfall inline oneboxes
+  on(:reduce_cooked) do |fragment, post|
+    fragment.css('a.inline-onebox').each do |link|
+      if link['href'] =~ /scryfall\.com\/(?:search|card)/
+        link.add_class('scryfall-card-link')
+      end
     end
   end
 

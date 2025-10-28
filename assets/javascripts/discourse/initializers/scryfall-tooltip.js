@@ -1,6 +1,8 @@
 import { withPluginApi } from "discourse/lib/plugin-api";
+import { ajax } from "discourse/lib/ajax";
 
 let currentTooltip = null;
+let fetchCache = new Map();
 
 function initializeScryfallTooltips(api) {
   api.decorateCookedElement(
@@ -14,28 +16,22 @@ function initializeScryfallTooltips(api) {
         }
         link.dataset.tooltipInitialized = "true";
 
+        let hoverTimeout = null;
+
         link.addEventListener("mouseenter", function () {
-          removeTooltip();
-
-          const cardData = {
-            name: this.dataset.cardName,
-            image: this.dataset.cardImage,
-            description: this.dataset.cardDescription,
-          };
-
-          // Only show tooltip if we have an image
-          if (cardData.image && cardData.image.trim() !== "") {
-            currentTooltip = createTooltip(cardData);
-            document.body.appendChild(currentTooltip);
-
-            // Position after appending to get accurate measurements
-            requestAnimationFrame(() => {
-              positionTooltip(currentTooltip, this);
-            });
-          }
+          const url = this.href;
+          
+          // Delay showing tooltip slightly to avoid flickering
+          hoverTimeout = setTimeout(() => {
+            showTooltipForUrl(url, this);
+          }, 300);
         });
 
         link.addEventListener("mouseleave", function () {
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = null;
+          }
           setTimeout(removeTooltip, 200);
         });
       });
@@ -47,28 +43,59 @@ function initializeScryfallTooltips(api) {
   window.addEventListener("scroll", removeTooltip, { passive: true });
 }
 
-function createTooltip(cardData) {
+function showTooltipForUrl(url, anchor) {
+  removeTooltip();
+
+  // Check cache first
+  if (fetchCache.has(url)) {
+    const html = fetchCache.get(url);
+    displayTooltip(html, anchor);
+    return;
+  }
+
+  // Fetch onebox HTML from Discourse
+  ajax("/onebox", {
+    data: { url: url, refresh: false },
+  })
+    .then((data) => {
+      if (data && data.preview) {
+        // Cache the result
+        fetchCache.set(url, data.preview);
+        displayTooltip(data.preview, anchor);
+      }
+    })
+    .catch((error) => {
+      console.error("Failed to fetch Scryfall onebox:", error);
+    });
+}
+
+function displayTooltip(html, anchor) {
   const tooltip = document.createElement("div");
   tooltip.className = "scryfall-tooltip";
-
-  const descriptionHtml =
-    cardData.description && cardData.description.trim()
-      ? `<div class="card-description">${escapeHtml(cardData.description)}</div>`
-      : "";
-
+  
+  // Wrap the onebox HTML in our tooltip container
   tooltip.innerHTML = `
     <div class="scryfall-tooltip-content">
-      <img src="${escapeHtml(cardData.image)}"
-           alt="${escapeHtml(cardData.name || "Card")}"
-           class="scryfall-card-image">
-      <div class="card-info">
-        <div class="card-name">${escapeHtml(cardData.name || "Card")}</div>
-        ${descriptionHtml}
-      </div>
+      ${html}
     </div>
   `;
 
-  return tooltip;
+  document.body.appendChild(tooltip);
+  currentTooltip = tooltip;
+
+  // Position after appending to get accurate measurements
+  requestAnimationFrame(() => {
+    positionTooltip(tooltip, anchor);
+  });
+
+  // Allow clicking links in tooltip
+  tooltip.addEventListener("mouseenter", () => {
+    tooltip.style.pointerEvents = "auto";
+  });
+
+  tooltip.addEventListener("mouseleave", () => {
+    removeTooltip();
+  });
 }
 
 function positionTooltip(tooltip, anchor) {
@@ -106,15 +133,6 @@ function removeTooltip() {
     currentTooltip.remove();
     currentTooltip = null;
   }
-}
-
-function escapeHtml(text) {
-  if (!text) {
-    return "";
-  }
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 export default {
