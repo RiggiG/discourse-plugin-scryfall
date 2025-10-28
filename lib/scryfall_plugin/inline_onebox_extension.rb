@@ -2,7 +2,9 @@
 
 module ScryfallPlugin
   module InlineOneboxExtension
-    def onebox_for(url)
+    def onebox_for(url, title = nil, opts = {})
+      Rails.logger.error "!!!! SCRYFALL EXTENSION CALLED WITH: #{url}"
+      
       # Handle Scryfall search URLs by following redirects
       if url =~ /scryfall\.com\/search/
         begin
@@ -30,8 +32,8 @@ module ScryfallPlugin
         end
       end
       
-      Rails.logger.info "Scryfall: Calling super with URL: #{url}"
-      result = super(url)
+      Rails.logger.info "Scryfall: Calling super with URL: #{url}, title: #{title}, opts: #{opts.inspect}"
+      result = super(url, title, opts)
       Rails.logger.info "Scryfall: Super returned: #{result.inspect}"
       result
     end
