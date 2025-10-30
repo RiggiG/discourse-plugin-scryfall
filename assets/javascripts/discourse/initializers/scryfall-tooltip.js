@@ -1,5 +1,5 @@
-import { withPluginApi } from "discourse/lib/plugin-api";
 import { ajax } from "discourse/lib/ajax";
+import { withPluginApi } from "discourse/lib/plugin-api";
 
 let currentTooltip = null;
 let fetchCache = new Map();
@@ -21,7 +21,7 @@ function initializeScryfallTooltips(api) {
         link.addEventListener("mouseenter", function () {
           // Use the card URL from data attribute (resolved by CardHandler)
           const cardUrl = this.dataset.cardUrl || this.href;
-          
+
           // Delay showing tooltip slightly to avoid flickering
           hoverTimeout = setTimeout(() => {
             showTooltipForUrl(cardUrl, this);
@@ -56,7 +56,7 @@ function showTooltipForUrl(url, anchor) {
 
   // Fetch full onebox for the card URL
   ajax("/onebox", {
-    data: { url: url, refresh: false },
+    data: { url, refresh: false },
   })
     .then((data) => {
       if (data && data.preview) {
@@ -65,15 +65,15 @@ function showTooltipForUrl(url, anchor) {
         displayTooltip(data.preview, anchor);
       }
     })
-    .catch((error) => {
-      console.error("Failed to fetch Scryfall onebox:", error);
+    .catch(() => {
+      // Silently fail - tooltip won't show
     });
 }
 
 function displayTooltip(html, anchor) {
   const tooltip = document.createElement("div");
   tooltip.className = "scryfall-tooltip";
-  
+
   // Wrap the onebox HTML in our tooltip container
   tooltip.innerHTML = `
     <div class="scryfall-tooltip-content">
