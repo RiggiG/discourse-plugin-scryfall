@@ -3,19 +3,20 @@
 module ::ScryfallPlugin
   class InlineCustomizer
     def self.customize_inline_oneboxes(fragment)
+      return unless SiteSetting.scryfall_plugin_enabled
+      
       fragment.css('a.inline-onebox').each do |link|
         url = link['href']
         next unless scryfall_url?(url)
         
-        # Get onebox data from cache
-        onebox_data = Discourse.cache.read(InlineOneboxer.cache_key(url))
-        next unless onebox_data
+        Rails.logger.info "Scryfall: Found inline onebox for URL: #{url}"
         
-        # Extract just the card name from the title
-        card_name = extract_card_name(onebox_data[:title])
+        # Extract card name from the existing link text or URL
+        card_name = extract_card_name_from_link(link, url)
         
         # Replace with custom rendering: just the card name with special class
-        link['class'] = 'scryfall-card-link'
+        # Add our custom class while keeping the inline-onebox class
+        link.add_class('scryfall-card-link')
         link['data-card-url'] = url
         link.inner_html = card_name
         
@@ -29,16 +30,30 @@ module ::ScryfallPlugin
       url =~ %r{scryfall\.com/(?:search|card)}
     end
 
-    def self.extract_card_name(title)
-      return title unless title
+    def self.extract_card_name_from_link(link, url)
+      # First try to get it from the existing link text
+      current_text = link.inner_text.strip
       
-      # Title format: "Card Name · Set (CODE) #123 · Scryfall Magic The Gathering Search"
-      # Extract just the card name (everything before the first ·)
-      if title =~ /^([^·]+)/
-        $1.strip
-      else
-        title
+      # If the link already has text that looks like a card name
+      # (i.e., doesn't look like a full onebox title with · separators)
+      if current_text.present? && !current_text.include?('·')
+        return current_text
       end
+      
+      # If it has the onebox format, extract the card name
+      if current_text =~ /^([^·]+)/
+        return $1.strip
+      end
+      
+      # Fallback: extract from URL
+      # URL format: https://scryfall.com/card/set/number/card-name
+      if url =~ %r{scryfall\.com/card/[^/]+/[^/]+/(.+)}
+        # Convert URL slug back to readable name
+        return $1.split('?').first.gsub('-', ' ').split.map(&:capitalize).join(' ')
+      end
+      
+      # Last resort: use the URL text or domain
+      current_text.present? ? current_text : 'Scryfall Card'
     end
   end
 end
