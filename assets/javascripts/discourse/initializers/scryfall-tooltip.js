@@ -21,9 +21,6 @@ function initializeScryfallTooltips(api) {
         // Add custom class
         link.classList.add("scryfall-card-link");
 
-        // Store the URL for tooltip
-        link.dataset.cardUrl = link.href;
-
         // Extract card name from the link text
         const linkText = link.textContent.trim();
 
@@ -62,8 +59,8 @@ function initializeScryfallTooltips(api) {
         let hoverTimeout = null;
 
         link.addEventListener("mouseenter", function () {
-          // Use the card URL from data attribute (resolved by CardHandler)
-          const cardUrl = this.dataset.cardUrl || this.href;
+          // Use the href directly since it's already the resolved card URL
+          const cardUrl = this.href;
 
           // Delay showing tooltip slightly to avoid flickering
           hoverTimeout = setTimeout(() => {

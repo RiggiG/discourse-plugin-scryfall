@@ -27,13 +27,12 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
         expect(link.inner_html).to eq("Jace, the Mind Sculptor")
       end
 
-      it "adds the custom class and data attribute" do
+      it "adds the custom class" do
         result = described_class.customize_inline_oneboxes(post, cooked)
         doc = Nokogiri::HTML5.fragment(result)
         link = doc.at_css("a")
 
         expect(link["class"]).to eq("inline-onebox scryfall-card-link")
-        expect(link["data-card-url"]).to eq("https://scryfall.com/card/ema/57/jace-the-mind-sculptor")
       end
     end
 
@@ -54,13 +53,12 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
         expect(link.inner_html).to eq("Jace, the Mind Sculptor")
       end
 
-      it "adds the custom class and data attribute" do
+      it "adds the custom class" do
         result = described_class.customize_inline_oneboxes(post, cooked)
         doc = Nokogiri::HTML5.fragment(result)
         link = doc.at_css("a")
 
         expect(link["class"]).to eq("inline-onebox scryfall-card-link")
-        expect(link["data-card-url"]).to eq("https://scryfall.com/card/ema/57/jace-the-mind-sculptor")
       end
     end
 
@@ -170,7 +168,6 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
         
         expect(result).not_to eq(cooked)
         expect(result).to include("scryfall-card-link")
-        expect(result).to include("data-card-url")
         expect(result).not_to include("· Set")
       end
 

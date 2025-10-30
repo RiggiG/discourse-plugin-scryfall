@@ -21,7 +21,6 @@ module ::ScryfallPlugin
         # Replace with custom rendering: just the card name with special class
         # Add our custom class while keeping the inline-onebox class
         link.add_class('scryfall-card-link')
-        link['data-card-url'] = url
         link.inner_html = card_name
         
         Rails.logger.info "Scryfall: Customized inline onebox for '#{card_name}'"

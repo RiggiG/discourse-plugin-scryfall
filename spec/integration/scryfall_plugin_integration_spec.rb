@@ -76,7 +76,6 @@ RSpec.describe "Scryfall Plugin Integration" do
       expect(scryfall_link).to be_present
       expect(scryfall_link['class']).to include('scryfall-card-link')
       expect(scryfall_link['class']).to include('inline-onebox')
-      expect(scryfall_link['data-card-url']).to eq("https://scryfall.com/card/clu/141/lightning-bolt")
       expect(scryfall_link['href']).to eq("https://scryfall.com/card/clu/141/lightning-bolt")
     end
   end
@@ -121,7 +120,6 @@ RSpec.describe "Scryfall Plugin Integration" do
       expect(scryfall_link).to be_present
       expect(scryfall_link['class']).to include('scryfall-card-link')
       expect(scryfall_link['class']).to include('inline-onebox')
-      expect(scryfall_link['data-card-url']).to eq("https://scryfall.com/card/cmm/395/sol-ring")
       expect(scryfall_link['href']).to eq("https://scryfall.com/card/cmm/395/sol-ring")
     end
   end
