@@ -19,11 +19,12 @@ function initializeScryfallTooltips(api) {
         let hoverTimeout = null;
 
         link.addEventListener("mouseenter", function () {
-          const url = this.href;
+          // Use the card URL from data attribute (resolved by CardHandler)
+          const cardUrl = this.dataset.cardUrl || this.href;
           
           // Delay showing tooltip slightly to avoid flickering
           hoverTimeout = setTimeout(() => {
-            showTooltipForUrl(url, this);
+            showTooltipForUrl(cardUrl, this);
           }, 300);
         });
 
@@ -53,7 +54,7 @@ function showTooltipForUrl(url, anchor) {
     return;
   }
 
-  // Fetch onebox HTML from Discourse
+  // Fetch full onebox for the card URL
   ajax("/onebox", {
     data: { url: url, refresh: false },
   })
