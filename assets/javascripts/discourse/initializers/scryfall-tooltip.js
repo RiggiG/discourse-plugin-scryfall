@@ -1,11 +1,10 @@
 import { ajax } from "discourse/lib/ajax";
 import { withPluginApi } from "discourse/lib/plugin-api";
 
-
-
 // Map each link to its tooltip and pin state
 const tooltipMap = new WeakMap();
 let fetchCache = new Map();
+let globalZIndex = 2000; // Start above default tooltips
 
 // Detect if we're on mobile/touch device
 const isMobileDevice = () => {
@@ -184,9 +183,14 @@ function displayTooltip(html, anchor, pin = false) {
   const tooltip = document.createElement("div");
   tooltip.className = "scryfall-tooltip";
   tooltip.style.position = "absolute";
-  tooltip.style.zIndex = "1000";
+  // Set z-index for stacking order
+  if (pin) {
+    globalZIndex++;
+    tooltip.style.zIndex = globalZIndex;
+  } else {
+    tooltip.style.zIndex = "1000";
+  }
   tooltip.style.visibility = "hidden"; // Hide until positioned
-
 
   // Parse the HTML, add scryfall-onebox class to <aside>, and insert into tooltip
   const wrapper = document.createElement('div');
@@ -212,6 +216,11 @@ function displayTooltip(html, anchor, pin = false) {
 
   if (pin) {
     tooltip.classList.add("pinned");
+    // Bring to front on click
+    tooltip.addEventListener("mousedown", function () {
+      globalZIndex++;
+      tooltip.style.zIndex = globalZIndex;
+    });
     // Add a close button for pinned tooltips
     const closeBtn = document.createElement("button");
     closeBtn.className = "scryfall-tooltip-close";
