@@ -2,8 +2,12 @@
 
 module ::ScryfallPlugin
   class InlineCustomizer
-    def self.customize_inline_oneboxes(fragment)
-      return unless SiteSetting.scryfall_plugin_enabled
+    def self.customize_inline_oneboxes(post, cooked)
+      return cooked unless SiteSetting.scryfall_plugin_enabled
+      return cooked if cooked.blank?
+
+      fragment = Nokogiri::HTML5.fragment(cooked)
+      modified = false
       
       fragment.css('a.inline-onebox').each do |link|
         url = link['href']
@@ -21,7 +25,10 @@ module ::ScryfallPlugin
         link.inner_html = card_name
         
         Rails.logger.info "Scryfall: Customized inline onebox for '#{card_name}'"
+        modified = true
       end
+
+      modified ? fragment.to_html : cooked
     end
 
     private

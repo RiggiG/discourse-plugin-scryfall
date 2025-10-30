@@ -7,6 +7,49 @@ let fetchCache = new Map();
 function initializeScryfallTooltips(api) {
   api.decorateCookedElement(
     (element) => {
+      // First, customize Scryfall inline oneboxes
+      const scryfallLinks = element.querySelectorAll(
+        'a.inline-onebox[href*="scryfall.com"]'
+      );
+
+      scryfallLinks.forEach((link) => {
+        // Skip if already processed
+        if (link.classList.contains("scryfall-card-link")) {
+          return;
+        }
+
+        // Add custom class
+        link.classList.add("scryfall-card-link");
+
+        // Store the URL for tooltip
+        link.dataset.cardUrl = link.href;
+
+        // Extract card name from the link text
+        const linkText = link.textContent.trim();
+
+        // If it's the full onebox format with · separators, extract just the card name
+        if (linkText.includes(" · ")) {
+          const cardName = linkText.split(" · ")[0].trim();
+          link.textContent = cardName;
+        }
+        // If the text is just "scryfall.com" or a URL, extract from href
+        else if (
+          linkText.includes("scryfall.com") ||
+          linkText.includes(".")
+        ) {
+          const match = link.href.match(/\/card\/[^/]+\/[^/]+\/([^/]+)$/);
+          if (match) {
+            const slug = match[1];
+            const cardName = slug
+              .split("-")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" ");
+            link.textContent = cardName;
+          }
+        }
+      });
+
+      // Then add tooltip listeners to all scryfall-card-link elements
       const links = element.querySelectorAll("a.scryfall-card-link");
 
       links.forEach((link) => {

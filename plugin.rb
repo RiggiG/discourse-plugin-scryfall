@@ -27,9 +27,9 @@ after_initialize do
     end
   end
 
-  # Customize Scryfall inline oneboxes
-  on(:reduce_cooked) do |fragment, post|
-    ScryfallPlugin::InlineCustomizer.customize_inline_oneboxes(fragment)
+  # Process cooked HTML to customize inline oneboxes
+  Plugin::Filter.register(:after_post_cook) do |post, cooked|
+    ScryfallPlugin::InlineCustomizer.customize_inline_oneboxes(post, cooked)
   end
 
   # Extend PostRevisor to handle edits
