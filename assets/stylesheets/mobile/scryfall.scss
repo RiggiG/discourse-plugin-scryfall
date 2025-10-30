@@ -18,32 +18,71 @@
   background: var(--secondary);
   border-radius: 10px;
   box-shadow: 0 8px 32px rgb(0 0 0 / 40%);
-  max-width: 95vw;
-  width: 420px;
+  max-width: 98vw;
+  width: min(480px, 98vw);
+  min-height: 0;
   max-height: 90vh;
-  overflow-y: auto;
-  padding: 0 0 12px 0;
-  position: relative;
-  animation: fadeIn 0.2s;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0 0 16px 0;
+  position: relative;
+  animation: fadeIn 0.2s;
 }
 
 .modal.scryfall-mobile-modal .close {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 8px;
+  right: 12px;
   font-size: 2em;
   color: var(--primary-medium);
   background: none;
   border: none;
-  padding: 8px 16px;
+  padding: 4px 8px;
   cursor: pointer;
   z-index: 1;
 }
 
 .scryfall-mobile-modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 16px 12px 0 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+// Make the onebox and onebox-body fill modal content area
+.scryfall-mobile-modal-content .onebox {
+  box-sizing: border-box;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+.scryfall-mobile-modal-content .onebox .onebox-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+// Center the card title and make the image fill the modal width
+.scryfall-mobile-modal-content .onebox .onebox-body h3 {
+  text-align: center;
+}
+.scryfall-mobile-modal-content .onebox .onebox-body img.thumbnail {
+  display: block;
+  margin: 0 auto 12px auto;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 488 / 680;
+  object-fit: contain;
+  border-radius: 13px;
+  box-sizing: border-box;
+  max-height: 56vh;
 }
 .scryfall-card-link {
   color: var(--primary-high);
