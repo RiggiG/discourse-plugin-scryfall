@@ -69,8 +69,21 @@ RSpec.describe "Scryfall Plugin Integration" do
       
       expect(created_post).to be_valid
       
+      # Debug: Check what the cooked HTML actually looks like
+      puts "\n=== Cooked HTML ==="
+      puts created_post.cooked
+      puts "==================\n"
+      
       # Check that cooked HTML contains our custom class
       doc = Nokogiri::HTML5.fragment(created_post.cooked)
+      
+      # First check if there's any link at all
+      all_links = doc.css('a')
+      puts "Found #{all_links.length} links total"
+      all_links.each_with_index do |link, i|
+        puts "Link #{i}: class='#{link['class']}' href='#{link['href']}'"
+      end
+      
       scryfall_link = doc.at_css('a.scryfall-card-link')
       
       expect(scryfall_link).to be_present
@@ -113,8 +126,21 @@ RSpec.describe "Scryfall Plugin Integration" do
       
       post_to_edit.reload
       
+      # Debug: Check what the cooked HTML actually looks like
+      puts "\n=== Edited Cooked HTML ==="
+      puts post_to_edit.cooked
+      puts "==================\n"
+      
       # Check that cooked HTML contains our custom class
       doc = Nokogiri::HTML5.fragment(post_to_edit.cooked)
+      
+      # First check if there's any link at all
+      all_links = doc.css('a')
+      puts "Found #{all_links.length} links total"
+      all_links.each_with_index do |link, i|
+        puts "Link #{i}: class='#{link['class']}' href='#{link['href']}'"
+      end
+      
       scryfall_link = doc.at_css('a.scryfall-card-link')
       
       expect(scryfall_link).to be_present
