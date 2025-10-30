@@ -84,57 +84,7 @@
   box-sizing: border-box;
   max-height: 56vh;
 }
-.scryfall-card-link {
-  color: var(--primary-high);
-  font-weight: 500;
-  text-decoration-line: underline;
-  text-decoration-style: dashed;
-  text-decoration-color: var(--primary-medium);
-  text-decoration-thickness: 1.2px;
-  text-underline-offset: 2px;
-  // Remove cursor: help on mobile since touch doesn't have hover
-}
 
-.scryfall-onebox {
-  margin: 1em 0;
-
-  .source {
-    margin-bottom: 8px;
-
-    .site-icon {
-      margin-right: 4px;
-      vertical-align: middle;
-    }
-
-    a {
-      color: var(--primary-medium);
-      font-size: 0.9em;
-    }
-  }
-
-  .onebox-body {
-    .aspect-image {
-      margin-bottom: 10px;
-
-      img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 13px;
-      }
-    }
-
-    h3 {
-      margin: 10px 0 5px 0;
-      font-size: 1.1em;
-    }
-
-    p {
-      margin: 5px 0;
-      font-size: 0.9em;
-      color: var(--primary-medium);
-    }
-  }
-}
 
 // Mobile card preview - shows below the link when tapped
 .scryfall-mobile-card {

@@ -1,7 +1,8 @@
 import { ajax } from "discourse/lib/ajax";
 import { withPluginApi } from "discourse/lib/plugin-api";
 
-let currentTooltip = null;
+// Map each link to its tooltip and pin state
+const tooltipMap = new WeakMap();
 let fetchCache = new Map();
 
 // Detect if we're on mobile/touch device
@@ -77,12 +78,12 @@ function initializeScryfallTooltips(api) {
             toggleMobileCard(cardUrl, this);
           });
         } else {
-          // Desktop: hover to show tooltip, click to pin
+          // Desktop: hover to show tooltip, click to pin (per-link)
           let hoverTimeout = null;
-          let pinned = false;
 
           link.addEventListener("mouseenter", function () {
-            if (pinned) return;
+            const state = tooltipMap.get(this) || {};
+            if (state.pinned) return;
             const cardUrl = this.href;
             hoverTimeout = setTimeout(() => {
               showTooltipForUrl(cardUrl, this);
@@ -90,22 +91,28 @@ function initializeScryfallTooltips(api) {
           });
 
           link.addEventListener("mouseleave", function () {
-            if (pinned) return;
+            const state = tooltipMap.get(this) || {};
+            if (state.pinned) return;
             if (hoverTimeout) {
               clearTimeout(hoverTimeout);
               hoverTimeout = null;
             }
-            setTimeout(removeTooltip, 200);
+            setTimeout(() => removeTooltip(this), 200);
           });
 
           link.addEventListener("click", function (e) {
             e.preventDefault();
-            if (pinned) {
-              pinned = false;
-              removeTooltip();
+            const state = tooltipMap.get(this) || {};
+            if (state.pinned) {
+              // Unpin and remove
+              state.pinned = false;
+              tooltipMap.set(this, state);
+              removeTooltip(this);
               return;
             }
-            pinned = true;
+            // Pin this tooltip
+            state.pinned = true;
+            tooltipMap.set(this, state);
             const cardUrl = this.href;
             showTooltipForUrl(cardUrl, this, true);
           });
@@ -117,19 +124,19 @@ function initializeScryfallTooltips(api) {
 
   // Remove tooltip when scrolling (desktop only)
   if (!isMobile) {
-    window.addEventListener("scroll", removeTooltip, { passive: true });
+    window.addEventListener("scroll", () => removeTooltip(), { passive: true });
   }
 }
 
 function showTooltipForUrl(url, anchor, pin = false) {
   console.log("[Scryfall] showTooltipForUrl called with:", url);
-  if (!pin) removeTooltip();
+  removeTooltip(anchor);
 
   // Check cache first
   if (fetchCache.has(url)) {
     console.log("[Scryfall] Using cached onebox");
     const html = fetchCache.get(url);
-    displayTooltip(html, anchor);
+    displayTooltip(html, anchor, pin);
     return;
   }
 
@@ -144,7 +151,7 @@ function showTooltipForUrl(url, anchor, pin = false) {
       if (html) {
         // Cache the result
         fetchCache.set(url, html);
-        displayTooltip(html, anchor);
+        displayTooltip(html, anchor, pin);
       } else {
         console.warn("[Scryfall] Empty HTML in onebox response");
       }
@@ -156,7 +163,7 @@ function showTooltipForUrl(url, anchor, pin = false) {
         console.log("[Scryfall] Found HTML in error response, using it");
         const html = error.jqXHR.responseText;
         fetchCache.set(url, html);
-        displayTooltip(html, anchor);
+        displayTooltip(html, anchor, pin);
       }
       // Otherwise silently fail - tooltip won't show
     });
@@ -164,22 +171,39 @@ function showTooltipForUrl(url, anchor, pin = false) {
 
 function displayTooltip(html, anchor, pin = false) {
   console.log("[Scryfall] displayTooltip called with html length:", html?.length);
-  
+
+  // Remove any existing tooltip for this anchor
+  removeTooltip(anchor);
+
   const tooltip = document.createElement("div");
   tooltip.className = "scryfall-tooltip";
   tooltip.style.position = "absolute";
   tooltip.style.zIndex = "1000";
   tooltip.style.visibility = "hidden"; // Hide until positioned
 
-  // Wrap the onebox HTML in our tooltip container
-  tooltip.innerHTML = `
-    <div class="scryfall-tooltip-content">
-      ${html}
-    </div>
-  `;
+
+  // Parse the HTML, add scryfall-onebox class to <aside>, and insert into tooltip
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+  const aside = wrapper.querySelector('aside.onebox');
+  if (aside) {
+    aside.classList.add('scryfall-onebox');
+  }
+  const tooltipContent = document.createElement('div');
+  tooltipContent.className = 'scryfall-tooltip-content';
+  // Move all children from wrapper to tooltipContent
+  while (wrapper.firstChild) {
+    tooltipContent.appendChild(wrapper.firstChild);
+  }
+  tooltip.appendChild(tooltipContent);
 
   document.body.appendChild(tooltip);
-  currentTooltip = tooltip;
+  // Track tooltip and pin state for this anchor
+  let state = tooltipMap.get(anchor) || {};
+  state.tooltip = tooltip;
+  state.pinned = !!pin;
+  tooltipMap.set(anchor, state);
+
   if (pin) {
     tooltip.classList.add("pinned");
     // Add a close button for pinned tooltips
@@ -189,11 +213,14 @@ function displayTooltip(html, anchor, pin = false) {
     closeBtn.title = "Close";
     closeBtn.onclick = function(e) {
       e.stopPropagation();
-      removeTooltip();
+      let state = tooltipMap.get(anchor) || {};
+      state.pinned = false;
+      tooltipMap.set(anchor, state);
+      removeTooltip(anchor);
     };
     tooltip.appendChild(closeBtn);
   }
-  
+
   console.log("[Scryfall] Tooltip appended to body");
 
   // Position after DOM update and make visible
@@ -212,7 +239,10 @@ function displayTooltip(html, anchor, pin = false) {
 
   if (!pin) {
     tooltip.addEventListener("mouseleave", () => {
-      removeTooltip();
+      let state = tooltipMap.get(anchor) || {};
+      if (!state.pinned) {
+        removeTooltip(anchor);
+      }
     });
   }
 }
@@ -247,10 +277,25 @@ function positionTooltip(tooltip, anchor) {
   tooltip.style.top = `${top}px`;
 }
 
-function removeTooltip() {
-  if (currentTooltip) {
-    currentTooltip.remove();
-    currentTooltip = null;
+function removeTooltip(anchor) {
+  if (anchor) {
+    let state = tooltipMap.get(anchor);
+    if (state && state.tooltip) {
+      state.tooltip.remove();
+      state.tooltip = null;
+      state.pinned = false;
+      tooltipMap.set(anchor, state);
+    }
+  } else {
+    // Remove all tooltips (e.g., on scroll)
+    tooltipMap.forEach((state, link) => {
+      if (state.tooltip) {
+        state.tooltip.remove();
+        state.tooltip = null;
+        state.pinned = false;
+        tooltipMap.set(link, state);
+      }
+    });
   }
 }
 
@@ -303,7 +348,16 @@ function toggleMobileCard(url, anchor) {
   // Fetch onebox HTML (with cache)
   function showHtml(html) {
     loading.remove();
-    modalContent.innerHTML += html;
+    // Parse the HTML, add scryfall-onebox class to <aside>, and insert into modalContent
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    const aside = wrapper.querySelector('aside.onebox');
+    if (aside) {
+      aside.classList.add('scryfall-onebox');
+    }
+    while (wrapper.firstChild) {
+      modalContent.appendChild(wrapper.firstChild);
+    }
   }
   if (fetchCache.has(url)) {
     showHtml(fetchCache.get(url));

@@ -18,62 +18,7 @@
   opacity: 1;
   color: var(--tertiary);
 }
-a.scryfall-card-link {
-  color: var(--primary-high);
-  font-weight: 500;
-  text-decoration-line: underline;
-  text-decoration-style: dashed;
-  text-decoration-color: var(--primary-medium);
-  text-decoration-thickness: 1.2px;
-  text-underline-offset: 2px;
-  cursor: help;
 
-  &:hover {
-    color: var(--tertiary);
-    text-decoration-color: var(--tertiary);
-  }
-}
-
-.scryfall-onebox {
-  margin: 1em 0;
-
-  .source {
-    margin-bottom: 8px;
-
-    .site-icon {
-      margin-right: 4px;
-      vertical-align: middle;
-    }
-
-    a {
-      color: var(--primary-medium);
-      font-size: 0.9em;
-    }
-  }
-
-  .onebox-body {
-    .aspect-image {
-      margin-bottom: 10px;
-
-      img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 13px;
-      }
-    }
-
-    h3 {
-      margin: 10px 0 5px 0;
-      font-size: 1.1em;
-    }
-
-    p {
-      margin: 5px 0;
-      font-size: 0.9em;
-      color: var(--primary-medium);
-    }
-  }
-}
 
 .scryfall-tooltip {
   position: absolute;
@@ -122,17 +67,35 @@ a.scryfall-card-link {
     .onebox-body {
       padding: 0;
 
-      .aspect-image {
-        text-align: center;
-        margin-bottom: 10px;
 
-        img {
-          max-width: 100%;
-          max-height: 400px;
-          height: auto;
-          border-radius: 13px;
-        }
-      }
+
+
+
+
+// Style the card image directly with maximum specificity to override onebox.scss
+.scryfall-tooltip aside.scryfall-onebox .onebox-body img.thumbnail,
+.scryfall-tooltip .scryfall-onebox .onebox-body img.thumbnail {
+  display: block;
+  margin: 0 auto 12px auto;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 488 / 680;
+  object-fit: contain;
+  border-radius: 13px;
+  box-sizing: border-box;
+  max-height: 400px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+// Style the Scryfall onebox itself for tooltip context
+.scryfall-tooltip aside.scryfall-onebox,
+.scryfall-tooltip .scryfall-onebox {
+  margin: 0;
+  border: none;
+  background: transparent;
+}
 
       h3 {
         margin: 10px 0 8px 0;
@@ -161,14 +124,3 @@ a.scryfall-card-link {
   }
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
