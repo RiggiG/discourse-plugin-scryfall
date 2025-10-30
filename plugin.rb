@@ -8,6 +8,10 @@
 # url: TODO
 # required_version: 2.7.0
 
+register_asset "stylesheets/common/scryfall.scss"
+register_asset "stylesheets/desktop/scryfall.scss", :desktop
+register_asset "stylesheets/mobile/scryfall.scss", :mobile
+
 enabled_site_setting :scryfall_plugin_enabled
 
 module ::ScryfallPlugin
