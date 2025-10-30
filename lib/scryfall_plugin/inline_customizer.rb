@@ -34,25 +34,30 @@ module ::ScryfallPlugin
       # First try to get it from the existing link text
       current_text = link.inner_text.strip
       
-      # If the link already has text that looks like a card name
-      # (i.e., doesn't look like a full onebox title with · separators)
-      if current_text.present? && !current_text.include?('·')
+      # If it has the onebox format with · separators, extract the card name
+      if current_text.include?('·')
+        if current_text =~ /^([^·]+)/
+          return $1.strip
+        end
+      end
+      
+      # If the link text looks like a real card name (not a URL or domain)
+      # Card names have spaces or are multi-word, not just "scryfall.com"
+      if current_text.present? && 
+         !current_text.include?('.com') && 
+         !current_text.include?('.') &&
+         current_text != url
         return current_text
       end
       
-      # If it has the onebox format, extract the card name
-      if current_text =~ /^([^·]+)/
-        return $1.strip
-      end
-      
-      # Fallback: extract from URL
+      # Extract from URL
       # URL format: https://scryfall.com/card/set/number/card-name
       if url =~ %r{scryfall\.com/card/[^/]+/[^/]+/(.+)}
         # Convert URL slug back to readable name
         return $1.split('?').first.gsub('-', ' ').split.map(&:capitalize).join(' ')
       end
       
-      # Last resort: use the URL text or domain
+      # Last resort: use the current text if it exists
       current_text.present? ? current_text : 'Scryfall Card'
     end
   end
