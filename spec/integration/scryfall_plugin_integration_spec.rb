@@ -55,6 +55,30 @@ RSpec.describe "Scryfall Plugin Integration" do
       expect(created_post.raw).to include("https://scryfall.com/card/clu/141/lightning-bolt")
       expect(created_post.raw).to include("https://scryfall.com/card/cmm/395/sol-ring")
     end
+
+    it "creates cooked HTML with scryfall-card-link class on inline oneboxes" do
+      raw = "Check out [[Lightning Bolt]]! This is a powerful card."
+      
+      post_creator = PostCreator.new(
+        user,
+        raw: raw,
+        topic_id: topic.id
+      )
+      
+      created_post = post_creator.create
+      
+      expect(created_post).to be_valid
+      
+      # Check that cooked HTML contains our custom class
+      doc = Nokogiri::HTML5.fragment(created_post.cooked)
+      scryfall_link = doc.at_css('a.scryfall-card-link')
+      
+      expect(scryfall_link).to be_present
+      expect(scryfall_link['class']).to include('scryfall-card-link')
+      expect(scryfall_link['class']).to include('inline-onebox')
+      expect(scryfall_link['data-card-url']).to eq("https://scryfall.com/card/clu/141/lightning-bolt")
+      expect(scryfall_link['href']).to eq("https://scryfall.com/card/clu/141/lightning-bolt")
+    end
   end
 
   describe "editing a post with card syntax" do
@@ -75,6 +99,30 @@ RSpec.describe "Scryfall Plugin Integration" do
       expect(post_to_edit.raw).to include("https://scryfall.com/card/cmm/395/sol-ring")
       expect(post_to_edit.raw).not_to include("[[")
       expect(post_to_edit.raw).not_to eq("Original text goes here.")
+    end
+
+    it "updates cooked HTML with scryfall-card-link class after edit" do
+      new_raw = "Edited with [[Sol Ring]] which is powerful."
+      
+      revisor = PostRevisor.new(post_to_edit)
+      result = revisor.revise!(
+        user,
+        raw: new_raw
+      )
+      
+      expect(result).to be_truthy
+      
+      post_to_edit.reload
+      
+      # Check that cooked HTML contains our custom class
+      doc = Nokogiri::HTML5.fragment(post_to_edit.cooked)
+      scryfall_link = doc.at_css('a.scryfall-card-link')
+      
+      expect(scryfall_link).to be_present
+      expect(scryfall_link['class']).to include('scryfall-card-link')
+      expect(scryfall_link['class']).to include('inline-onebox')
+      expect(scryfall_link['data-card-url']).to eq("https://scryfall.com/card/cmm/395/sol-ring")
+      expect(scryfall_link['href']).to eq("https://scryfall.com/card/cmm/395/sol-ring")
     end
   end
 
