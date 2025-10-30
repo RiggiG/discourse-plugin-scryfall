@@ -27,9 +27,12 @@ after_initialize do
     end
   end
 
-  # Process cooked HTML to customize inline oneboxes
-  Plugin::Filter.register(:after_post_cook) do |post, cooked|
-    ScryfallPlugin::InlineCustomizer.customize_inline_oneboxes(post, cooked)
+  # Customize inline oneboxes AFTER all post processing is complete
+  # This runs after CookedPostProcessor.process_inline_onebox has set the title
+  on(:post_process_cooked) do |doc, post|
+    next unless SiteSetting.scryfall_plugin_enabled
+    
+    ScryfallPlugin::InlineCustomizer.customize_inline_oneboxes_in_doc(doc, post)
   end
 
   # Extend PostRevisor to handle edits

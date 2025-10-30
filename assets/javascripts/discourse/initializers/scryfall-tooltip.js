@@ -5,6 +5,8 @@ let currentTooltip = null;
 let fetchCache = new Map();
 
 function initializeScryfallTooltips(api) {
+  console.log("[Scryfall] Initializing tooltips");
+  
   api.decorateCookedElement(
     (element) => {
       // Find all Scryfall inline oneboxes (may or may not already have our class)
@@ -12,7 +14,10 @@ function initializeScryfallTooltips(api) {
         'a.inline-onebox[href*="scryfall.com"], a.scryfall-card-link'
       );
 
+      console.log(`[Scryfall] Found ${scryfallLinks.length} Scryfall links`);
+
       scryfallLinks.forEach((link) => {
+        console.log("[Scryfall] Processing link:", link.href, "Classes:", link.className);
         // Add custom class if not already present
         if (!link.classList.contains("scryfall-card-link")) {
           link.classList.add("scryfall-card-link");
@@ -54,6 +59,7 @@ function initializeScryfallTooltips(api) {
         link.addEventListener("mouseenter", function () {
           // Use the href directly since it's already the resolved card URL
           const cardUrl = this.href;
+          console.log("[Scryfall] Mouse enter, will fetch:", cardUrl);
 
           // Delay showing tooltip slightly to avoid flickering
           hoverTimeout = setTimeout(() => {
@@ -78,32 +84,41 @@ function initializeScryfallTooltips(api) {
 }
 
 function showTooltipForUrl(url, anchor) {
+  console.log("[Scryfall] showTooltipForUrl called with:", url);
   removeTooltip();
 
   // Check cache first
   if (fetchCache.has(url)) {
+    console.log("[Scryfall] Using cached onebox");
     const html = fetchCache.get(url);
     displayTooltip(html, anchor);
     return;
   }
 
+  console.log("[Scryfall] Fetching onebox from /onebox");
   // Fetch full onebox for the card URL
   ajax("/onebox", {
     data: { url, refresh: false },
   })
     .then((data) => {
+      console.log("[Scryfall] Onebox response:", data);
       if (data && data.preview) {
         // Cache the result
         fetchCache.set(url, data.preview);
         displayTooltip(data.preview, anchor);
+      } else {
+        console.warn("[Scryfall] No preview in onebox response");
       }
     })
-    .catch(() => {
+    .catch((error) => {
+      console.error("[Scryfall] Error fetching onebox:", error);
       // Silently fail - tooltip won't show
     });
 }
 
 function displayTooltip(html, anchor) {
+  console.log("[Scryfall] displayTooltip called with html length:", html?.length);
+  
   const tooltip = document.createElement("div");
   tooltip.className = "scryfall-tooltip";
 
@@ -116,6 +131,8 @@ function displayTooltip(html, anchor) {
 
   document.body.appendChild(tooltip);
   currentTooltip = tooltip;
+  
+  console.log("[Scryfall] Tooltip appended to body");
 
   // Position after appending to get accurate measurements
   requestAnimationFrame(() => {

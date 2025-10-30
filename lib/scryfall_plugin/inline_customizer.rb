@@ -2,32 +2,40 @@
 
 module ::ScryfallPlugin
   class InlineCustomizer
-    def self.customize_inline_oneboxes(post, cooked)
-      return cooked unless SiteSetting.scryfall_plugin_enabled
-      return cooked if cooked.blank?
+    # This method is called after CookedPostProcessor has finished processing
+    # It receives a Nokogiri document object, not HTML string
+    def self.customize_inline_oneboxes_in_doc(doc, post)
+      return unless SiteSetting.scryfall_plugin_enabled
+      return if doc.blank?
 
-      fragment = Nokogiri::HTML5.fragment(cooked)
-      modified = false
+      Rails.logger.info "Scryfall: Processing post #{post.id} for inline oneboxes"
       
-      fragment.css('a.inline-onebox, a.inline-onebox-loading').each do |link|
+      # Find all inline oneboxes that are Scryfall links
+      doc.css('a.inline-onebox').each do |link|
         url = link['href']
         next unless scryfall_url?(url)
         
         Rails.logger.info "Scryfall: Found inline onebox for URL: #{url}"
         
-        # Extract card name from the existing link text or URL
-        card_name = extract_card_name_from_link(link, url)
+        # At this point, the link already has the onebox title as its text
+        # We want to extract just the card name from it
+        current_text = link.text.strip
         
-        # Replace with custom rendering: just the card name with special class
-        # Add our custom class while keeping the inline-onebox class
+        # The onebox title format is usually: "Card Name · Set Name · Scryfall"
+        # Extract just the card name
+        card_name = if current_text.include?(' · ')
+          current_text.split(' · ')[0].strip
+        else
+          # Fallback: extract from URL if text doesn't have the expected format
+          extract_card_name_from_url(url)
+        end
+        
+        # Add our custom class and update the text to just the card name
         link.add_class('scryfall-card-link')
-        link.inner_html = card_name
+        link.content = card_name
         
-        Rails.logger.info "Scryfall: Customized inline onebox for '#{card_name}'"
-        modified = true
+        Rails.logger.info "Scryfall: Customized inline onebox to '#{card_name}'"
       end
-
-      modified ? fragment.to_html : cooked
     end
 
     private
@@ -36,26 +44,7 @@ module ::ScryfallPlugin
       url =~ %r{scryfall\.com/(?:search|card)}
     end
 
-    def self.extract_card_name_from_link(link, url)
-      # First try to get it from the existing link text
-      current_text = link.inner_text.strip
-      
-      # If it has the onebox format with · separators, extract the card name
-      if current_text.include?('·')
-        if current_text =~ /^([^·]+)/
-          return $1.strip
-        end
-      end
-      
-      # If the link text looks like a real card name (not a URL or domain)
-      # Card names have spaces or are multi-word, not just "scryfall.com"
-      if current_text.present? && 
-         !current_text.include?('.com') && 
-         !current_text.include?('.') &&
-         current_text != url
-        return current_text
-      end
-      
+    def self.extract_card_name_from_url(url)
       # Extract from URL
       # URL format: https://scryfall.com/card/set/number/card-name
       if url =~ %r{scryfall\.com/card/[^/]+/[^/]+/(.+)}
@@ -63,8 +52,8 @@ module ::ScryfallPlugin
         return $1.split('?').first.gsub('-', ' ').split.map(&:capitalize).join(' ')
       end
       
-      # Last resort: use the current text if it exists
-      current_text.present? ? current_text : 'Scryfall Card'
+      # Last resort
+      'Scryfall Card'
     end
   end
 end
