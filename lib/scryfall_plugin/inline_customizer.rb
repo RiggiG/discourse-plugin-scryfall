@@ -24,9 +24,13 @@ module ::ScryfallPlugin
         # The onebox title format is usually: "Card Name · Set Name · Scryfall"
         # Extract just the card name
         card_name = if current_text.include?(' · ')
+          # Has the full onebox format, extract first part
           current_text.split(' · ')[0].strip
+        elsif current_text.present? && !current_text.include?('scryfall.com')
+          # Already just the card name, use as-is
+          current_text
         else
-          # Fallback: extract from URL if text doesn't have the expected format
+          # Fallback: extract from URL if text looks like a URL
           extract_card_name_from_url(url)
         end
         

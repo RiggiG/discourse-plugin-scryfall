@@ -21,6 +21,18 @@ RSpec.describe "Scryfall Plugin Integration" do
       
       instance_double(FinalDestination, resolve: resolved_uri)
     end
+    
+    # Stub InlineOneboxer to return titles without making HTTP requests
+    allow(InlineOneboxer).to receive(:lookup) do |url, **_opts|
+      case url
+      when "https://scryfall.com/card/clu/141/lightning-bolt"
+        { url: url, title: "Lightning Bolt · CLU · Scryfall" }
+      when "https://scryfall.com/card/cmm/395/sol-ring"
+        { url: url, title: "Sol Ring · CMM · Scryfall" }
+      else
+        nil
+      end
+    end
   end
 
   describe "creating a post with card syntax" do
