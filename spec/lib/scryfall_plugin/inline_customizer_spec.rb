@@ -7,7 +7,7 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
 
   before { SiteSetting.scryfall_plugin_enabled = true }
 
-  describe ".customize_inline_oneboxes" do
+  describe ".customize_inline_oneboxes_in_doc" do
     context "with Scryfall inline onebox using full title format" do
       let(:cooked) do
         <<~HTML
@@ -20,16 +20,16 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
       end
 
       it "extracts just the card name" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
-        doc = Nokogiri::HTML5.fragment(result)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         link = doc.at_css("a")
 
-        expect(link.inner_html).to eq("Jace, the Mind Sculptor")
+        expect(link.text.strip).to eq("Jace, the Mind Sculptor")
       end
 
       it "adds the custom class" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
-        doc = Nokogiri::HTML5.fragment(result)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         link = doc.at_css("a")
 
         expect(link["class"]).to eq("inline-onebox scryfall-card-link")
@@ -46,16 +46,16 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
       end
 
       it "preserves the simple card name" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
-        doc = Nokogiri::HTML5.fragment(result)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         link = doc.at_css("a")
 
-        expect(link.inner_html).to eq("Jace, the Mind Sculptor")
+        expect(link.text.strip).to eq("Jace, the Mind Sculptor")
       end
 
       it "adds the custom class" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
-        doc = Nokogiri::HTML5.fragment(result)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         link = doc.at_css("a")
 
         expect(link["class"]).to eq("inline-onebox scryfall-card-link")
@@ -72,11 +72,11 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
       end
 
       it "extracts card name from URL" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
-        doc = Nokogiri::HTML5.fragment(result)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         link = doc.at_css("a")
 
-        expect(link.inner_html).to eq("Sol Ring")
+        expect(link.text.strip).to eq("Sol Ring")
       end
     end
 
@@ -88,9 +88,11 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
       end
 
       it "does not modify the link" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        original_html = doc.to_html
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         
-        expect(result).to eq(cooked)
+        expect(doc.to_html).to eq(original_html)
       end
     end
 
@@ -106,8 +108,8 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
       end
 
       it "only modifies Scryfall links" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
-        doc = Nokogiri::HTML5.fragment(result)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         links = doc.css("a")
 
         expect(links[0]["class"]).to eq("inline-onebox scryfall-card-link")
@@ -116,13 +118,13 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
       end
 
       it "customizes each Scryfall link independently" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
-        doc = Nokogiri::HTML5.fragment(result)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         links = doc.css("a")
 
-        expect(links[0].inner_html).to eq("Test Card 1")
-        expect(links[1].inner_html).to eq("Example")
-        expect(links[2].inner_html).to eq("Test Card 2")
+        expect(links[0].text.strip).to eq("Test Card 1")
+        expect(links[1].text.strip).to eq("Example")
+        expect(links[2].text.strip).to eq("Test Card 2")
       end
     end
 
@@ -136,19 +138,18 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
       before { SiteSetting.scryfall_plugin_enabled = false }
 
       it "does not modify links" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
+        doc = Nokogiri::HTML5.fragment(cooked)
+        original_html = doc.to_html
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
         
-        expect(result).to eq(cooked)
+        expect(doc.to_html).to eq(original_html)
       end
     end
 
-    context "when cooked HTML is blank" do
-      it "returns the blank cooked value" do
-        result = described_class.customize_inline_oneboxes(post, "")
-        expect(result).to eq("")
-
-        result = described_class.customize_inline_oneboxes(post, nil)
-        expect(result).to be_nil
+    context "when doc is blank" do
+      it "returns early without error" do
+        doc = nil
+        expect { described_class.customize_inline_oneboxes_in_doc(doc, post) }.not_to raise_error
       end
     end
 
@@ -163,20 +164,26 @@ RSpec.describe ScryfallPlugin::InlineCustomizer do
         HTML
       end
 
-      it "returns modified HTML when changes are made" do
-        result = described_class.customize_inline_oneboxes(post, cooked)
+      it "modifies the document in place when changes are made" do
+        doc = Nokogiri::HTML5.fragment(cooked)
+        original_html = doc.to_html
         
-        expect(result).not_to eq(cooked)
-        expect(result).to include("scryfall-card-link")
-        expect(result).not_to include("· Set")
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
+        
+        expect(doc.to_html).not_to eq(original_html)
+        expect(doc.to_html).to include("scryfall-card-link")
+        expect(doc.to_html).not_to include("· Set")
       end
 
-      it "only returns modified HTML if changes were actually made" do
+      it "does not modify document if no Scryfall links present" do
         non_scryfall_cooked = '<a href="https://example.com" class="inline-onebox">Example</a>'
-        result = described_class.customize_inline_oneboxes(post, non_scryfall_cooked)
+        doc = Nokogiri::HTML5.fragment(non_scryfall_cooked)
+        original_html = doc.to_html
         
-        # Should return original cooked since no modifications were made
-        expect(result).to eq(non_scryfall_cooked)
+        described_class.customize_inline_oneboxes_in_doc(doc, post)
+        
+        # Should not modify doc since no Scryfall links
+        expect(doc.to_html).to eq(original_html)
       end
     end
   end

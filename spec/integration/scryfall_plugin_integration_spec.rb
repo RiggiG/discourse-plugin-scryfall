@@ -69,28 +69,19 @@ RSpec.describe "Scryfall Plugin Integration" do
       
       expect(created_post).to be_valid
       
-      # Debug: Check what the cooked HTML actually looks like
-      puts "\n=== Cooked HTML ==="
-      puts created_post.cooked
-      puts "==================\n"
+      # Trigger post processing (which is normally async)
+      Jobs::ProcessPost.new.execute(post_id: created_post.id, new_post: true)
+      created_post.reload
       
       # Check that cooked HTML contains our custom class
       doc = Nokogiri::HTML5.fragment(created_post.cooked)
-      
-      # First check if there's any link at all
-      all_links = doc.css('a')
-      puts "Found #{all_links.length} links total"
-      all_links.each_with_index do |link, i|
-        puts "Link #{i}: class='#{link['class']}' href='#{link['href']}'"
-      end
-      
       scryfall_link = doc.at_css('a.scryfall-card-link')
       
       expect(scryfall_link).to be_present, "Expected to find a.scryfall-card-link in:\n#{created_post.cooked}"
       expect(scryfall_link['class']).to include('scryfall-card-link')
-      # May have inline-onebox or inline-onebox-loading depending on async processing
-      expect(scryfall_link['class']).to match(/inline-onebox/)
+      expect(scryfall_link['class']).to include('inline-onebox')
       expect(scryfall_link['href']).to eq("https://scryfall.com/card/clu/141/lightning-bolt")
+      expect(scryfall_link.text.strip).to eq("Lightning Bolt")
     end
   end
 
@@ -127,28 +118,19 @@ RSpec.describe "Scryfall Plugin Integration" do
       
       post_to_edit.reload
       
-      # Debug: Check what the cooked HTML actually looks like
-      puts "\n=== Edited Cooked HTML ==="
-      puts post_to_edit.cooked
-      puts "==================\n"
+      # Trigger post processing (which is normally async)
+      Jobs::ProcessPost.new.execute(post_id: post_to_edit.id)
+      post_to_edit.reload
       
       # Check that cooked HTML contains our custom class
       doc = Nokogiri::HTML5.fragment(post_to_edit.cooked)
-      
-      # First check if there's any link at all
-      all_links = doc.css('a')
-      puts "Found #{all_links.length} links total"
-      all_links.each_with_index do |link, i|
-        puts "Link #{i}: class='#{link['class']}' href='#{link['href']}'"
-      end
-      
       scryfall_link = doc.at_css('a.scryfall-card-link')
       
       expect(scryfall_link).to be_present, "Expected to find a.scryfall-card-link in:\n#{post_to_edit.cooked}"
       expect(scryfall_link['class']).to include('scryfall-card-link')
-      # May have inline-onebox or inline-onebox-loading depending on async processing
-      expect(scryfall_link['class']).to match(/inline-onebox/)
+      expect(scryfall_link['class']).to include('inline-onebox')
       expect(scryfall_link['href']).to eq("https://scryfall.com/card/cmm/395/sol-ring")
+      expect(scryfall_link.text.strip).to eq("Sol Ring")
     end
   end
 
