@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "Scryfall Plugin Integration" do
-  fab!(:user)
+  fab!(:user) { Fabricate(:user, trust_level: TrustLevel[2]) }
   fab!(:topic)
 
   before do
@@ -61,15 +61,20 @@ RSpec.describe "Scryfall Plugin Integration" do
     fab!(:post_to_edit) { Fabricate(:post, topic: topic, user: user, raw: "Original text goes here.") }
 
     it "processes card syntax during edit" do
+      new_raw = "Edited with [[Sol Ring]] which is powerful."
+      
       revisor = PostRevisor.new(post_to_edit)
-      revisor.revise!(
+      result = revisor.revise!(
         user,
-        raw: "Edited with [[Sol Ring]] which is powerful."
+        raw: new_raw
       )
+      
+      expect(result).to be_truthy
       
       post_to_edit.reload
       expect(post_to_edit.raw).to include("https://scryfall.com/card/cmm/395/sol-ring")
       expect(post_to_edit.raw).not_to include("[[")
+      expect(post_to_edit.raw).not_to eq("Original text goes here.")
     end
   end
 
