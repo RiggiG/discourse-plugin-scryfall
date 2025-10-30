@@ -3,6 +3,27 @@
 require "rails_helper"
 
 RSpec.describe ScryfallPlugin::CardHandler do
+  # Default: stub FinalDestination to return card URLs
+  before do
+    # Mock common card resolutions
+    allow_any_instance_of(FinalDestination).to receive(:resolve) do |instance|
+      search_url = instance.instance_variable_get(:@uri).to_s
+      
+      # Simulate resolution to card URLs based on card name in search
+      case search_url
+      when /Lightning%20Bolt/
+        URI.parse("https://scryfall.com/card/clu/141/lightning-bolt")
+      when /Sol%20Ring/
+        URI.parse("https://scryfall.com/card/cmm/395/sol-ring")
+      when /Jace.*Mind%20Sculptor/
+        URI.parse("https://scryfall.com/card/ema/57/jace-the-mind-sculptor")
+      else
+        # Return nil for other cases (will fall back to search URL)
+        nil
+      end
+    end
+  end
+
   describe ".process_raw_content" do
     context "when content has no card syntax" do
       it "returns the content unchanged" do
@@ -12,28 +33,27 @@ RSpec.describe ScryfallPlugin::CardHandler do
     end
 
     context "when content has [[card name]] syntax" do
-      it "replaces single card reference with Scryfall URL" do
+      it "replaces single card reference with resolved card URL" do
         raw = "Check out [[Lightning Bolt]]!"
         result = described_class.process_raw_content(raw)
         
-        expect(result).to match(%r{https://scryfall\.com/(?:search|card)})
-        expect(result).to include("Lightning")
-        expect(result).to include("Bolt")
+        expect(result).to include("https://scryfall.com/card/clu/141/lightning-bolt")
+        expect(result).not_to include("[[")
       end
 
-      it "replaces multiple card references" do
+      it "replaces multiple card references with resolved URLs" do
         raw = "[[Lightning Bolt]] and [[Sol Ring]] are powerful."
         result = described_class.process_raw_content(raw)
         
-        expect(result.scan(/scryfall\.com/).size).to eq(2)
+        expect(result).to include("https://scryfall.com/card/clu/141/lightning-bolt")
+        expect(result).to include("https://scryfall.com/card/cmm/395/sol-ring")
       end
 
       it "handles card names with special characters" do
         raw = "[[Jace, the Mind Sculptor]] is strong."
         result = described_class.process_raw_content(raw)
         
-        expect(result).to include("Jace")
-        expect(result).to match(%r{https://scryfall\.com/(?:search|card)})
+        expect(result).to include("https://scryfall.com/card/ema/57/jace-the-mind-sculptor")
       end
 
       it "preserves surrounding text" do
@@ -42,13 +62,15 @@ RSpec.describe ScryfallPlugin::CardHandler do
         
         expect(result).to start_with("Before ")
         expect(result).to end_with(" after")
+        expect(result).to include("/card/")
       end
 
-      it "handles empty card name gracefully" do
-        raw = "Empty [[ ]] reference"
+      it "falls back to search URL when resolution fails" do
+        raw = "Unknown [[Nonexistent Card Name]] reference"
         result = described_class.process_raw_content(raw)
         
-        expect(result).to match(%r{https://scryfall\.com/(?:search|card)})
+        expect(result).to match(%r{https://scryfall\.com/search})
+        expect(result).to include("Nonexistent")
       end
     end
 
@@ -66,48 +88,38 @@ RSpec.describe ScryfallPlugin::CardHandler do
   end
 
   describe ".scryfall_url" do
-    it "generates a Scryfall search URL" do
-      url = described_class.scryfall_url("Lightning Bolt")
-      
-      expect(url).to match(%r{^https://scryfall\.com/(?:search|card)})
-    end
-
-    it "URL encodes the card name" do
-      url = described_class.scryfall_url("Jace, the Mind Sculptor")
-      
-      expect(url).to include("Jace")
-      expect(url).not_to include(" ")
-    end
-
-    context "with FinalDestination resolution" do
-      before do
-        # Stub FinalDestination to avoid actual HTTP requests
-        allow_any_instance_of(FinalDestination).to receive(:resolve).and_return(nil)
-      end
-
-      it "attempts to resolve the search URL" do
-        expect(FinalDestination).to receive(:new).and_call_original
-        described_class.scryfall_url("Lightning Bolt")
-      end
-
-      it "falls back to search URL if resolution fails" do
-        url = described_class.scryfall_url("Lightning Bolt")
-        expect(url).to match(%r{scryfall\.com/(?:search|card)})
-      end
-    end
-
     context "when FinalDestination resolves to card URL" do
       let(:card_url) { "https://scryfall.com/card/clu/141/lightning-bolt" }
-
-      before do
-        allow_any_instance_of(FinalDestination).to receive(:resolve)
-          .and_return(URI.parse(card_url))
-      end
 
       it "returns the resolved card URL" do
         url = described_class.scryfall_url("Lightning Bolt")
         expect(url).to eq(card_url)
       end
+    end
+
+    context "when FinalDestination resolution fails" do
+      before do
+        # Override default stub to return nil
+        allow_any_instance_of(FinalDestination).to receive(:resolve).and_return(nil)
+      end
+
+      it "falls back to search URL" do
+        url = described_class.scryfall_url("Unknown Card")
+        expect(url).to match(%r{^https://scryfall\.com/search})
+        expect(url).to include("Unknown")
+      end
+
+      it "URL encodes the card name in search URL" do
+        url = described_class.scryfall_url("Card With Spaces")
+        expect(url).to include("Card")
+        expect(url).not_to include(" ")
+        expect(url).to match(/With/)
+      end
+    end
+
+    it "attempts to resolve using FinalDestination" do
+      expect(FinalDestination).to receive(:new).and_call_original
+      described_class.scryfall_url("Lightning Bolt")
     end
   end
 end

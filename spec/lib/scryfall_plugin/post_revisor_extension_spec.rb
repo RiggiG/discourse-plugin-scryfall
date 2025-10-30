@@ -8,6 +8,19 @@ RSpec.describe ScryfallPlugin::PostRevisorExtension do
 
   before do
     SiteSetting.scryfall_plugin_enabled = true
+    # Stub FinalDestination to return card URLs
+    allow_any_instance_of(FinalDestination).to receive(:resolve) do |instance|
+      search_url = instance.instance_variable_get(:@uri).to_s
+      
+      case search_url
+      when /Lightning%20Bolt/
+        URI.parse("https://scryfall.com/card/clu/141/lightning-bolt")
+      when /Sol%20Ring/
+        URI.parse("https://scryfall.com/card/cmm/395/sol-ring")
+      else
+        nil
+      end
+    end
   end
 
   describe "post revision" do
@@ -17,7 +30,7 @@ RSpec.describe ScryfallPlugin::PostRevisorExtension do
       
       revisor.revise!(user, raw: new_raw)
       
-      expect(post.raw).to match(%r{scryfall\.com/(?:search|card)})
+      expect(post.raw).to include("https://scryfall.com/card/clu/141/lightning-bolt")
       expect(post.raw).not_to include("[[")
     end
 
@@ -46,7 +59,8 @@ RSpec.describe ScryfallPlugin::PostRevisorExtension do
       
       revisor.revise!(user, raw: new_raw)
       
-      expect(post.raw.scan(/scryfall\.com/).size).to eq(2)
+      expect(post.raw).to include("https://scryfall.com/card/clu/141/lightning-bolt")
+      expect(post.raw).to include("https://scryfall.com/card/cmm/395/sol-ring")
     end
   end
 end

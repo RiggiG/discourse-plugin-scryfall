@@ -9,10 +9,23 @@ RSpec.describe "Scryfall Plugin Integration" do
   before do
     SiteSetting.scryfall_plugin_enabled = true
     sign_in(user)
+    # Stub FinalDestination to return card URLs
+    allow_any_instance_of(FinalDestination).to receive(:resolve) do |instance|
+      search_url = instance.instance_variable_get(:@uri).to_s
+      
+      case search_url
+      when /Lightning%20Bolt/
+        URI.parse("https://scryfall.com/card/clu/141/lightning-bolt")
+      when /Sol%20Ring/
+        URI.parse("https://scryfall.com/card/cmm/395/sol-ring")
+      else
+        nil
+      end
+    end
   end
 
   describe "creating a post with card syntax" do
-    it "converts [[card name]] to Scryfall URL" do
+    it "converts [[card name]] to resolved card URL" do
       raw = "Check out [[Lightning Bolt]]!"
       
       post "/posts.json", params: {
@@ -23,11 +36,11 @@ RSpec.describe "Scryfall Plugin Integration" do
       expect(response.status).to eq(200)
       
       json = response.parsed_body
-      expect(json["raw"]).to match(%r{scryfall\.com/(?:search|card)})
+      expect(json["raw"]).to include("https://scryfall.com/card/clu/141/lightning-bolt")
       expect(json["raw"]).not_to include("[[")
     end
 
-    it "creates post with multiple card references" do
+    it "creates post with multiple resolved card URLs" do
       raw = "[[Lightning Bolt]] and [[Sol Ring]] are great."
       
       post "/posts.json", params: {
@@ -38,7 +51,8 @@ RSpec.describe "Scryfall Plugin Integration" do
       expect(response.status).to eq(200)
       
       json = response.parsed_body
-      expect(json["raw"].scan(/scryfall\.com/).size).to eq(2)
+      expect(json["raw"]).to include("https://scryfall.com/card/clu/141/lightning-bolt")
+      expect(json["raw"]).to include("https://scryfall.com/card/cmm/395/sol-ring")
     end
   end
 
@@ -53,7 +67,7 @@ RSpec.describe "Scryfall Plugin Integration" do
       expect(response.status).to eq(200)
       
       post_to_edit.reload
-      expect(post_to_edit.raw).to match(%r{scryfall\.com/(?:search|card)})
+      expect(post_to_edit.raw).to include("https://scryfall.com/card/cmm/395/sol-ring")
       expect(post_to_edit.raw).not_to include("[[")
     end
   end
