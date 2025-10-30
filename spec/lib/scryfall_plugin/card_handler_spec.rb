@@ -5,22 +5,21 @@ require "rails_helper"
 RSpec.describe ScryfallPlugin::CardHandler do
   # Default: stub FinalDestination to return card URLs
   before do
-    # Mock common card resolutions
-    allow_any_instance_of(FinalDestination).to receive(:resolve) do |instance|
-      search_url = instance.instance_variable_get(:@uri).to_s
-      
-      # Simulate resolution to card URLs based on card name in search
-      case search_url
-      when /Lightning%20Bolt/
+    # Mock FinalDestination.new to return a verifying double with resolve method
+    allow(FinalDestination).to receive(:new) do |search_url, **_opts|
+      resolved_uri = case search_url
+      when /Lightning\+Bolt/
         URI.parse("https://scryfall.com/card/clu/141/lightning-bolt")
-      when /Sol%20Ring/
+      when /Sol\+Ring/
         URI.parse("https://scryfall.com/card/cmm/395/sol-ring")
-      when /Jace.*Mind%20Sculptor/
+      when /Jace.*Mind\+Sculptor/
         URI.parse("https://scryfall.com/card/ema/57/jace-the-mind-sculptor")
       else
         # Return nil for other cases (will fall back to search URL)
         nil
       end
+      
+      instance_double(FinalDestination, resolve: resolved_uri)
     end
   end
 
@@ -118,8 +117,9 @@ RSpec.describe ScryfallPlugin::CardHandler do
     end
 
     it "attempts to resolve using FinalDestination" do
-      expect(FinalDestination).to receive(:new).and_call_original
+      allow(FinalDestination).to receive(:new).and_call_original
       described_class.scryfall_url("Lightning Bolt")
+      expect(FinalDestination).to have_received(:new)
     end
   end
 end

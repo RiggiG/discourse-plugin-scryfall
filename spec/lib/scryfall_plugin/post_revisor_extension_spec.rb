@@ -9,17 +9,17 @@ RSpec.describe ScryfallPlugin::PostRevisorExtension do
   before do
     SiteSetting.scryfall_plugin_enabled = true
     # Stub FinalDestination to return card URLs
-    allow_any_instance_of(FinalDestination).to receive(:resolve) do |instance|
-      search_url = instance.instance_variable_get(:@uri).to_s
-      
-      case search_url
-      when /Lightning%20Bolt/
+    allow(FinalDestination).to receive(:new) do |search_url, **_opts|
+      resolved_uri = case search_url
+      when /Lightning\+Bolt/
         URI.parse("https://scryfall.com/card/clu/141/lightning-bolt")
-      when /Sol%20Ring/
+      when /Sol\+Ring/
         URI.parse("https://scryfall.com/card/cmm/395/sol-ring")
       else
         nil
       end
+      
+      instance_double(FinalDestination, resolve: resolved_uri)
     end
   end
 
