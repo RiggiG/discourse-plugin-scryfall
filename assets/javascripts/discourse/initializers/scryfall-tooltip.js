@@ -1,6 +1,8 @@
 import { ajax } from "discourse/lib/ajax";
 import { withPluginApi } from "discourse/lib/plugin-api";
 
+
+
 // Map each link to its tooltip and pin state
 const tooltipMap = new WeakMap();
 let fetchCache = new Map();
@@ -69,6 +71,10 @@ function initializeScryfallTooltips(api) {
           return;
         }
         link.dataset.tooltipInitialized = "true";
+
+        if (!api.getCurrentUser()) {
+          return;
+        }
 
         if (isMobile) {
           // Mobile: tap to toggle card preview
