@@ -154,6 +154,9 @@ function displayTooltip(html, anchor) {
   
   const tooltip = document.createElement("div");
   tooltip.className = "scryfall-tooltip";
+  tooltip.style.position = "absolute";
+  tooltip.style.zIndex = "1000";
+  tooltip.style.visibility = "hidden"; // Hide until positioned
 
   // Wrap the onebox HTML in our tooltip container
   tooltip.innerHTML = `
@@ -167,9 +170,13 @@ function displayTooltip(html, anchor) {
   
   console.log("[Scryfall] Tooltip appended to body");
 
-  // Position after appending to get accurate measurements
+  // Position after DOM update and make visible
   requestAnimationFrame(() => {
-    positionTooltip(tooltip, anchor);
+    requestAnimationFrame(() => {
+      positionTooltip(tooltip, anchor);
+      tooltip.style.visibility = "visible";
+      console.log("[Scryfall] Tooltip positioned at:", tooltip.style.left, tooltip.style.top);
+    });
   });
 
   // Allow clicking links in tooltip
@@ -220,58 +227,79 @@ function removeTooltip() {
 }
 
 function toggleMobileCard(url, anchor) {
-  console.log("Toggle mobile card for:", url);
-  
-  // Check if a card is already open for this link
-  const existingCard = anchor.nextElementSibling;
-  if (existingCard && existingCard.classList.contains('scryfall-mobile-card')) {
-    // Toggle visibility
-    if (existingCard.classList.contains('visible')) {
-      existingCard.classList.remove('visible');
-      // Remove after animation completes
-      setTimeout(() => existingCard.remove(), 300);
-    } else {
-      existingCard.classList.add('visible');
-    }
-    return;
-  }
+  console.log("Toggle mobile modal for:", url);
 
-  // Remove any other open cards
-  document.querySelectorAll('.scryfall-mobile-card').forEach(card => {
-    card.classList.remove('visible');
-    setTimeout(() => card.remove(), 300);
-  });
+  // Remove any existing modal
+  document.querySelectorAll('.modal.scryfall-mobile-modal').forEach(modal => modal.remove());
 
-  // Create new card
-  const card = document.createElement('div');
-  card.className = 'scryfall-mobile-card';
-  
-  const cardContent = document.createElement('div');
-  cardContent.className = 'scryfall-mobile-card-content';
-  
+  // Create modal overlay (Discourse uses .modal)
+  const overlay = document.createElement('div');
+  overlay.className = 'modal scryfall-mobile-modal';
+
+  // Modal inner container (Discourse uses .modal-inner-container)
+  const modalInner = document.createElement('div');
+  modalInner.className = 'modal-inner-container';
+
+  // Close button (Discourse uses .close)
   const closeButton = document.createElement('button');
-  closeButton.className = 'scryfall-mobile-card-close';
-  closeButton.textContent = '×';
+  closeButton.className = 'close';
+  closeButton.type = 'button';
+  closeButton.innerHTML = '<span aria-hidden="true">×</span>';
   closeButton.onclick = (e) => {
     e.stopPropagation();
-    card.classList.remove('visible');
-    setTimeout(() => card.remove(), 300);
+    overlay.remove();
   };
-  
-  const img = document.createElement('img');
-  img.src = url;
-  img.alt = 'Scryfall card preview';
-  img.loading = 'lazy';
-  
-  cardContent.appendChild(closeButton);
-  cardContent.appendChild(img);
-  card.appendChild(cardContent);
-  
-  // Insert after the link
-  anchor.parentNode.insertBefore(card, anchor.nextSibling);
-  
-  // Trigger animation
-  setTimeout(() => card.classList.add('visible'), 10);
+
+  // Modal content
+  const modalContent = document.createElement('div');
+  modalContent.className = 'scryfall-mobile-modal-content';
+
+  // Add loading indicator
+  const loading = document.createElement('div');
+  loading.className = 'scryfall-mobile-card-loading';
+  loading.textContent = 'Loading...';
+  modalContent.appendChild(loading);
+
+  modalInner.appendChild(closeButton);
+  modalInner.appendChild(modalContent);
+  overlay.appendChild(modalInner);
+  document.body.appendChild(overlay);
+
+  // Dismiss modal on overlay tap (not on modal itself)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  });
+
+  // Fetch onebox HTML (with cache)
+  function showHtml(html) {
+    loading.remove();
+    modalContent.innerHTML += html;
+  }
+  if (fetchCache.has(url)) {
+    showHtml(fetchCache.get(url));
+    return;
+  }
+  ajax("/onebox", {
+    data: { url, refresh: false },
+    dataType: "html",
+  })
+    .then((html) => {
+      fetchCache.set(url, html);
+      showHtml(html);
+    })
+    .catch((error) => {
+      let html = '';
+      if (error.jqXHR && error.jqXHR.responseText) {
+        html = error.jqXHR.responseText;
+        fetchCache.set(url, html);
+        showHtml(html);
+      } else {
+        loading.remove();
+        modalContent.innerHTML += '<div class="scryfall-mobile-card-error">Error loading card preview</div>';
+      }
+    });
 }
 
 export default {

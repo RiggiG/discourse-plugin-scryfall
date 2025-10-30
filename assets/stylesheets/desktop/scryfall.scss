@@ -1,13 +1,16 @@
-.scryfall-card-link {
-  border-bottom: 1px dashed var(--primary-medium);
+a.scryfall-card-link {
   color: var(--primary-high);
   font-weight: 500;
-  text-decoration: none;
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: var(--primary-medium);
+  text-decoration-thickness: 1.2px;
+  text-underline-offset: 2px;
   cursor: help;
 
   &:hover {
     color: var(--tertiary);
-    border-bottom-color: var(--tertiary);
+    text-decoration-color: var(--tertiary);
   }
 }
 
