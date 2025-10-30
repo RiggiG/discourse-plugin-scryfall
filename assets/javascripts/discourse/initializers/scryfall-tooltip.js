@@ -7,49 +7,42 @@ let fetchCache = new Map();
 function initializeScryfallTooltips(api) {
   api.decorateCookedElement(
     (element) => {
-      // First, customize Scryfall inline oneboxes
+      // Find all Scryfall inline oneboxes (may or may not already have our class)
       const scryfallLinks = element.querySelectorAll(
-        'a.inline-onebox[href*="scryfall.com"]'
+        'a.inline-onebox[href*="scryfall.com"], a.scryfall-card-link'
       );
 
       scryfallLinks.forEach((link) => {
-        // Skip if already processed
-        if (link.classList.contains("scryfall-card-link")) {
-          return;
-        }
+        // Add custom class if not already present
+        if (!link.classList.contains("scryfall-card-link")) {
+          link.classList.add("scryfall-card-link");
 
-        // Add custom class
-        link.classList.add("scryfall-card-link");
+          // Extract card name from the link text (only if we're adding the class)
+          const linkText = link.textContent.trim();
 
-        // Extract card name from the link text
-        const linkText = link.textContent.trim();
-
-        // If it's the full onebox format with · separators, extract just the card name
-        if (linkText.includes(" · ")) {
-          const cardName = linkText.split(" · ")[0].trim();
-          link.textContent = cardName;
-        }
-        // If the text is just "scryfall.com" or a URL, extract from href
-        else if (
-          linkText.includes("scryfall.com") ||
-          linkText.includes(".")
-        ) {
-          const match = link.href.match(/\/card\/[^/]+\/[^/]+\/([^/]+)$/);
-          if (match) {
-            const slug = match[1];
-            const cardName = slug
-              .split("-")
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(" ");
+          // If it's the full onebox format with · separators, extract just the card name
+          if (linkText.includes(" · ")) {
+            const cardName = linkText.split(" · ")[0].trim();
             link.textContent = cardName;
           }
+          // If the text is just "scryfall.com" or a URL, extract from href
+          else if (
+            linkText.includes("scryfall.com") ||
+            linkText.includes(".")
+          ) {
+            const match = link.href.match(/\/card\/[^/]+\/[^/]+\/([^/]+)$/);
+            if (match) {
+              const slug = match[1];
+              const cardName = slug
+                .split("-")
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
+              link.textContent = cardName;
+            }
+          }
         }
-      });
 
-      // Then add tooltip listeners to all scryfall-card-link elements
-      const links = element.querySelectorAll("a.scryfall-card-link");
-
-      links.forEach((link) => {
+        // Add tooltip listeners (whether class was just added or already existed)
         // Prevent duplicate event listeners
         if (link.dataset.tooltipInitialized) {
           return;
