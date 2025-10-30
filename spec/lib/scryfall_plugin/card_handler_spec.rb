@@ -117,7 +117,6 @@ RSpec.describe ScryfallPlugin::CardHandler do
     end
 
     it "attempts to resolve using FinalDestination" do
-      allow(FinalDestination).to receive(:new).and_call_original
       described_class.scryfall_url("Lightning Bolt")
       expect(FinalDestination).to have_received(:new)
     end

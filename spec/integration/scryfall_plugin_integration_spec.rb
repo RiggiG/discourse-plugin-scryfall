@@ -26,7 +26,7 @@ RSpec.describe "Scryfall Plugin Integration" do
 
   describe "creating a post with card syntax" do
     it "converts [[card name]] to resolved card URL" do
-      raw = "Check out [[Lightning Bolt]]!"
+      raw = "Check out [[Lightning Bolt]]! This is a powerful card that deals 3 damage to any target."
       
       post "/posts.json", params: {
         raw: raw,
@@ -41,7 +41,7 @@ RSpec.describe "Scryfall Plugin Integration" do
     end
 
     it "creates post with multiple resolved card URLs" do
-      raw = "[[Lightning Bolt]] and [[Sol Ring]] are great."
+      raw = "[[Lightning Bolt]] and [[Sol Ring]] are great cards to have in your deck."
       
       post "/posts.json", params: {
         raw: raw,
@@ -57,11 +57,11 @@ RSpec.describe "Scryfall Plugin Integration" do
   end
 
   describe "editing a post with card syntax" do
-    fab!(:post_to_edit) { Fabricate(:post, topic: topic, user: user, raw: "Original text") }
+    fab!(:post_to_edit) { Fabricate(:post, topic: topic, user: user, raw: "Original text goes here.") }
 
     it "processes card syntax during edit" do
       put "/posts/#{post_to_edit.id}.json", params: {
-        post: { raw: "Edited with [[Sol Ring]]" }
+        post: { raw: "Edited with [[Sol Ring]] which is a very powerful mana artifact." }
       }
       
       expect(response.status).to eq(200)
@@ -78,7 +78,7 @@ RSpec.describe "Scryfall Plugin Integration" do
     end
 
     it "does not process card syntax" do
-      raw = "Check out [[Lightning Bolt]]!"
+      raw = "Check out [[Lightning Bolt]]! This card is really powerful in red decks."
       
       post "/posts.json", params: {
         raw: raw,
