@@ -286,16 +286,6 @@ function removeTooltip(anchor) {
       state.pinned = false;
       tooltipMap.set(anchor, state);
     }
-  } else {
-    // Remove all tooltips (e.g., on scroll)
-    tooltipMap.forEach((state, link) => {
-      if (state.tooltip) {
-        state.tooltip.remove();
-        state.tooltip = null;
-        state.pinned = false;
-        tooltipMap.set(link, state);
-      }
-    });
   }
 }
 

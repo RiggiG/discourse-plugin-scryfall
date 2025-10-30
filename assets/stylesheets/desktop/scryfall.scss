@@ -1,7 +1,33 @@
+// Tooltip onebox-body horizontal layout
+.scryfall-tooltip .scryfall-tooltip-content aside.scryfall-onebox article.onebox-body {
+  display: block;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+// Image on the left, text on the right
+.scryfall-tooltip .scryfall-tooltip-content aside.scryfall-onebox article.onebox-body img.thumbnail {
+  display: block;
+  margin: 0;
+  margin-right: 8px;
+  width: 180px !important;
+  max-width: 180px !important;
+  height: auto !important;
+  aspect-ratio: 488 / 680;
+  object-fit: contain;
+  border-radius: 13px;
+  box-sizing: border-box;
+  max-height: 320px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  flex-shrink: 0;
+}
+
 // Close button for pinned tooltip
 .scryfall-tooltip.pinned .scryfall-tooltip-close {
   position: absolute;
-  top: 6px;
+  top: 10px;
   right: 10px;
   font-size: 1.5em;
   color: var(--primary-medium);
@@ -20,22 +46,19 @@
 }
 
 
+
 .scryfall-tooltip {
   position: absolute;
   z-index: 1000;
-  pointer-events: none;
+  pointer-events: auto;
   animation: fadeIn 0.2s ease-in;
-
-  &:hover {
-    pointer-events: auto;
-  }
 
   .scryfall-tooltip-content {
     background: var(--secondary);
     border: 1px solid var(--primary-low);
     border-radius: 6px;
     box-shadow: 0 8px 24px rgb(0 0 0 / 30%);
-    max-width: 950px;
+    max-width: 550px;
     overflow: hidden;
     padding: 12px;
   }
@@ -66,40 +89,9 @@
 
     .onebox-body {
       padding: 0;
-
-
-
-
-
-
-// Style the card image directly with maximum specificity to override onebox.scss
-.scryfall-tooltip aside.scryfall-onebox .onebox-body img.thumbnail,
-.scryfall-tooltip .scryfall-onebox .onebox-body img.thumbnail {
-  display: block;
-  margin: 0 auto 12px auto;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
-  aspect-ratio: 488 / 680;
-  object-fit: contain;
-  border-radius: 13px;
-  box-sizing: border-box;
-  max-height: 400px !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-}
-
-// Style the Scryfall onebox itself for tooltip context
-.scryfall-tooltip aside.scryfall-onebox,
-.scryfall-tooltip .scryfall-onebox {
-  margin: 0;
-  border: none;
-  background: transparent;
-}
-
-      h3 {
+       h3 {
         margin: 10px 0 8px 0;
-        font-size: 1.1em;
+        font-size: 1.6em;
 
         a {
           color: var(--primary);
@@ -112,15 +104,33 @@
 
       p {
         margin: 5px 0;
-        font-size: 0.9em;
+        font-size: 1.1em;
         line-height: 1.4;
         color: var(--primary-medium);
+        span {
+            position: absolute;
+            bottom: 30px;
+        }
       }
     }
 
-    .onebox-metadata {
-      display: none; // Hide empty metadata in tooltip
-    }
+
+    // Remove .onebox-metadata here if it's already in common, otherwise:
+    // .onebox-metadata {
+    //   display: none; // Hide empty metadata in tooltip
+    // }
   }
+} // close .scryfall-tooltip
+
+
+
+// Style the Scryfall onebox itself for tooltip context
+.scryfall-tooltip aside.scryfall-onebox,
+.scryfall-tooltip .scryfall-onebox {
+  margin: 0;
+  border: none;
+  background: transparent;
 }
+
+    
 
