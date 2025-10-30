@@ -4,9 +4,20 @@ import { withPluginApi } from "discourse/lib/plugin-api";
 let currentTooltip = null;
 let fetchCache = new Map();
 
+// Detect if we're on mobile/touch device
+const isMobileDevice = () => {
+  return (
+    /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    ) || "ontouchstart" in window
+  );
+};
+
 function initializeScryfallTooltips(api) {
   console.log("[Scryfall] Initializing tooltips");
-  
+  const isMobile = isMobileDevice();
+  console.log(`[Scryfall] Device type: ${isMobile ? "mobile" : "desktop"}`);
+
   api.decorateCookedElement(
     (element) => {
       // Find all Scryfall inline oneboxes (may or may not already have our class)
@@ -17,7 +28,12 @@ function initializeScryfallTooltips(api) {
       console.log(`[Scryfall] Found ${scryfallLinks.length} Scryfall links`);
 
       scryfallLinks.forEach((link) => {
-        console.log("[Scryfall] Processing link:", link.href, "Classes:", link.className);
+        console.log(
+          "[Scryfall] Processing link:",
+          link.href,
+          "Classes:",
+          link.className
+        );
         // Add custom class if not already present
         if (!link.classList.contains("scryfall-card-link")) {
           link.classList.add("scryfall-card-link");
@@ -47,40 +63,49 @@ function initializeScryfallTooltips(api) {
           }
         }
 
-        // Add tooltip listeners (whether class was just added or already existed)
         // Prevent duplicate event listeners
         if (link.dataset.tooltipInitialized) {
           return;
         }
         link.dataset.tooltipInitialized = "true";
 
-        let hoverTimeout = null;
+        if (isMobile) {
+          // Mobile: tap to toggle card preview
+          link.addEventListener("click", function (e) {
+            e.preventDefault();
+            const cardUrl = this.href;
+            toggleMobileCard(cardUrl, this);
+          });
+        } else {
+          // Desktop: hover to show tooltip
+          let hoverTimeout = null;
 
-        link.addEventListener("mouseenter", function () {
-          // Use the href directly since it's already the resolved card URL
-          const cardUrl = this.href;
-          console.log("[Scryfall] Mouse enter, will fetch:", cardUrl);
+          link.addEventListener("mouseenter", function () {
+            const cardUrl = this.href;
+            console.log("[Scryfall] Mouse enter, will fetch:", cardUrl);
 
-          // Delay showing tooltip slightly to avoid flickering
-          hoverTimeout = setTimeout(() => {
-            showTooltipForUrl(cardUrl, this);
-          }, 300);
-        });
+            hoverTimeout = setTimeout(() => {
+              showTooltipForUrl(cardUrl, this);
+            }, 300);
+          });
 
-        link.addEventListener("mouseleave", function () {
-          if (hoverTimeout) {
-            clearTimeout(hoverTimeout);
-            hoverTimeout = null;
-          }
-          setTimeout(removeTooltip, 200);
-        });
+          link.addEventListener("mouseleave", function () {
+            if (hoverTimeout) {
+              clearTimeout(hoverTimeout);
+              hoverTimeout = null;
+            }
+            setTimeout(removeTooltip, 200);
+          });
+        }
       });
     },
     { id: "scryfall-tooltips" }
   );
 
-  // Remove tooltip when scrolling
-  window.addEventListener("scroll", removeTooltip, { passive: true });
+  // Remove tooltip when scrolling (desktop only)
+  if (!isMobile) {
+    window.addEventListener("scroll", removeTooltip, { passive: true });
+  }
 }
 
 function showTooltipForUrl(url, anchor) {
@@ -99,20 +124,28 @@ function showTooltipForUrl(url, anchor) {
   // Fetch full onebox for the card URL
   ajax("/onebox", {
     data: { url, refresh: false },
+    dataType: "html",
   })
-    .then((data) => {
-      console.log("[Scryfall] Onebox response:", data);
-      if (data && data.preview) {
+    .then((html) => {
+      console.log("[Scryfall] Onebox HTML received, length:", html?.length);
+      if (html) {
         // Cache the result
-        fetchCache.set(url, data.preview);
-        displayTooltip(data.preview, anchor);
+        fetchCache.set(url, html);
+        displayTooltip(html, anchor);
       } else {
-        console.warn("[Scryfall] No preview in onebox response");
+        console.warn("[Scryfall] Empty HTML in onebox response");
       }
     })
     .catch((error) => {
       console.error("[Scryfall] Error fetching onebox:", error);
-      // Silently fail - tooltip won't show
+      // Even on "error", check if we got HTML in the response
+      if (error.jqXHR && error.jqXHR.responseText) {
+        console.log("[Scryfall] Found HTML in error response, using it");
+        const html = error.jqXHR.responseText;
+        fetchCache.set(url, html);
+        displayTooltip(html, anchor);
+      }
+      // Otherwise silently fail - tooltip won't show
     });
 }
 
@@ -184,6 +217,61 @@ function removeTooltip() {
     currentTooltip.remove();
     currentTooltip = null;
   }
+}
+
+function toggleMobileCard(url, anchor) {
+  console.log("Toggle mobile card for:", url);
+  
+  // Check if a card is already open for this link
+  const existingCard = anchor.nextElementSibling;
+  if (existingCard && existingCard.classList.contains('scryfall-mobile-card')) {
+    // Toggle visibility
+    if (existingCard.classList.contains('visible')) {
+      existingCard.classList.remove('visible');
+      // Remove after animation completes
+      setTimeout(() => existingCard.remove(), 300);
+    } else {
+      existingCard.classList.add('visible');
+    }
+    return;
+  }
+
+  // Remove any other open cards
+  document.querySelectorAll('.scryfall-mobile-card').forEach(card => {
+    card.classList.remove('visible');
+    setTimeout(() => card.remove(), 300);
+  });
+
+  // Create new card
+  const card = document.createElement('div');
+  card.className = 'scryfall-mobile-card';
+  
+  const cardContent = document.createElement('div');
+  cardContent.className = 'scryfall-mobile-card-content';
+  
+  const closeButton = document.createElement('button');
+  closeButton.className = 'scryfall-mobile-card-close';
+  closeButton.textContent = '×';
+  closeButton.onclick = (e) => {
+    e.stopPropagation();
+    card.classList.remove('visible');
+    setTimeout(() => card.remove(), 300);
+  };
+  
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = 'Scryfall card preview';
+  img.loading = 'lazy';
+  
+  cardContent.appendChild(closeButton);
+  cardContent.appendChild(img);
+  card.appendChild(cardContent);
+  
+  // Insert after the link
+  anchor.parentNode.insertBefore(card, anchor.nextSibling);
+  
+  // Trigger animation
+  setTimeout(() => card.classList.add('visible'), 10);
 }
 
 export default {

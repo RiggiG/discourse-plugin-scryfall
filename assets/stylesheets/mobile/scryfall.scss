@@ -1,0 +1,148 @@
+.scryfall-card-link {
+  border-bottom: 1px dashed var(--primary-medium);
+  color: var(--primary-high);
+  font-weight: 500;
+  text-decoration: none;
+  // Remove cursor: help on mobile since touch doesn't have hover
+}
+
+.scryfall-onebox {
+  margin: 1em 0;
+
+  .source {
+    margin-bottom: 8px;
+
+    .site-icon {
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    a {
+      color: var(--primary-medium);
+      font-size: 0.9em;
+    }
+  }
+
+  .onebox-body {
+    .aspect-image {
+      margin-bottom: 10px;
+
+      img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 13px;
+      }
+    }
+
+    h3 {
+      margin: 10px 0 5px 0;
+      font-size: 1.1em;
+    }
+
+    p {
+      margin: 5px 0;
+      font-size: 0.9em;
+      color: var(--primary-medium);
+    }
+  }
+}
+
+// Mobile card preview - shows below the link when tapped
+.scryfall-mobile-card {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--primary-low);
+  border-radius: 6px;
+  background: var(--secondary);
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out, margin 0.3s ease-out;
+
+  &.scryfall-mobile-card-visible {
+    max-height: 800px; // Large enough for any card
+    opacity: 1;
+    margin-top: 12px;
+    margin-bottom: 12px;
+  }
+
+  .scryfall-mobile-card-content {
+    padding: 12px;
+
+    .onebox {
+      margin: 0;
+      border: none;
+      background: transparent;
+
+      .source {
+        margin-bottom: 8px;
+
+        .site-icon {
+          margin-right: 4px;
+          vertical-align: middle;
+        }
+
+        a {
+          color: var(--primary-medium);
+          font-size: 0.9em;
+        }
+      }
+
+      .onebox-body {
+        padding: 0;
+
+        .aspect-image {
+          text-align: center;
+          margin-bottom: 10px;
+
+          img {
+            max-width: 100%;
+            max-height: 400px;
+            height: auto;
+            border-radius: 13px;
+          }
+        }
+
+        h3 {
+          margin: 10px 0 8px 0;
+          font-size: 1.1em;
+
+          a {
+            color: var(--primary);
+          }
+        }
+
+        p {
+          margin: 5px 0;
+          font-size: 0.9em;
+          line-height: 1.4;
+          color: var(--primary-medium);
+        }
+      }
+
+      .onebox-metadata {
+        display: none;
+      }
+    }
+  }
+
+  .scryfall-mobile-card-close {
+    text-align: center;
+    padding: 8px;
+    border-top: 1px solid var(--primary-low);
+    color: var(--primary-medium);
+    font-size: 0.9em;
+    cursor: pointer;
+
+    &:active {
+      background: var(--primary-very-low);
+    }
+  }
+}
+
+// Add tap indicator for mobile
+.scryfall-card-link::after {
+  content: " 🃏";
+  font-size: 0.8em;
+  opacity: 0.6;
+}
