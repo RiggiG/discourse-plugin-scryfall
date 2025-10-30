@@ -77,24 +77,37 @@ function initializeScryfallTooltips(api) {
             toggleMobileCard(cardUrl, this);
           });
         } else {
-          // Desktop: hover to show tooltip
+          // Desktop: hover to show tooltip, click to pin
           let hoverTimeout = null;
+          let pinned = false;
 
           link.addEventListener("mouseenter", function () {
+            if (pinned) return;
             const cardUrl = this.href;
-            console.log("[Scryfall] Mouse enter, will fetch:", cardUrl);
-
             hoverTimeout = setTimeout(() => {
               showTooltipForUrl(cardUrl, this);
             }, 300);
           });
 
           link.addEventListener("mouseleave", function () {
+            if (pinned) return;
             if (hoverTimeout) {
               clearTimeout(hoverTimeout);
               hoverTimeout = null;
             }
             setTimeout(removeTooltip, 200);
+          });
+
+          link.addEventListener("click", function (e) {
+            e.preventDefault();
+            if (pinned) {
+              pinned = false;
+              removeTooltip();
+              return;
+            }
+            pinned = true;
+            const cardUrl = this.href;
+            showTooltipForUrl(cardUrl, this, true);
           });
         }
       });
@@ -108,9 +121,9 @@ function initializeScryfallTooltips(api) {
   }
 }
 
-function showTooltipForUrl(url, anchor) {
+function showTooltipForUrl(url, anchor, pin = false) {
   console.log("[Scryfall] showTooltipForUrl called with:", url);
-  removeTooltip();
+  if (!pin) removeTooltip();
 
   // Check cache first
   if (fetchCache.has(url)) {
@@ -149,7 +162,7 @@ function showTooltipForUrl(url, anchor) {
     });
 }
 
-function displayTooltip(html, anchor) {
+function displayTooltip(html, anchor, pin = false) {
   console.log("[Scryfall] displayTooltip called with html length:", html?.length);
   
   const tooltip = document.createElement("div");
@@ -167,6 +180,19 @@ function displayTooltip(html, anchor) {
 
   document.body.appendChild(tooltip);
   currentTooltip = tooltip;
+  if (pin) {
+    tooltip.classList.add("pinned");
+    // Add a close button for pinned tooltips
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "scryfall-tooltip-close";
+    closeBtn.innerHTML = "×";
+    closeBtn.title = "Close";
+    closeBtn.onclick = function(e) {
+      e.stopPropagation();
+      removeTooltip();
+    };
+    tooltip.appendChild(closeBtn);
+  }
   
   console.log("[Scryfall] Tooltip appended to body");
 
@@ -184,9 +210,11 @@ function displayTooltip(html, anchor) {
     tooltip.style.pointerEvents = "auto";
   });
 
-  tooltip.addEventListener("mouseleave", () => {
-    removeTooltip();
-  });
+  if (!pin) {
+    tooltip.addEventListener("mouseleave", () => {
+      removeTooltip();
+    });
+  }
 }
 
 function positionTooltip(tooltip, anchor) {
