@@ -9,7 +9,7 @@ module ::ScryfallPlugin
       fragment = Nokogiri::HTML5.fragment(cooked)
       modified = false
       
-      fragment.css('a.inline-onebox').each do |link|
+      fragment.css('a.inline-onebox, a.inline-onebox-loading').each do |link|
         url = link['href']
         next unless scryfall_url?(url)
         
