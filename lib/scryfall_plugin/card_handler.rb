@@ -4,11 +4,11 @@ require 'cgi'
 
 module ::ScryfallPlugin
   class CardHandler
-    CARD_SYNTAX_REGEX = /\[\[([^\]]+)\]\]/
+    CARD_SYNTAX_REGEX = /(?:\\?\[){2}([^\]]+)(?:\\?\]){2}/
 
     def self.process_raw_content(raw_content)
-      return raw_content unless raw_content&.include?('[[')
-      
+      return raw_content unless raw_content&.match?(CARD_SYNTAX_REGEX)
+
       Rails.logger.info "Scryfall: Processing raw content with [[ syntax"
       
       raw_content.gsub(CARD_SYNTAX_REGEX) do |match|
