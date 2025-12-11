@@ -12,7 +12,7 @@ module ::ScryfallPlugin
       start_time = Time.now
       Rails.logger.info "Scryfall: Processing raw content with [[ syntax"
       
-      result = raw_content.gsub(CARD_SYNTAX_REGEX) do |match|o |match|
+      result = raw_content.gsub(CARD_SYNTAX_REGEX) do |match|
         card_name = $1.strip
         scryfall_url(card_name)
       end
