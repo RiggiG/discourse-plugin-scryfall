@@ -8,6 +8,7 @@ module ::ScryfallPlugin
       return unless SiteSetting.scryfall_plugin_enabled
       return if doc.blank?
 
+      start_time = Time.now
       Rails.logger.info "Scryfall: Processing post #{post.id} for inline oneboxes"
       
       # Find all inline oneboxes that are Scryfall links
@@ -40,6 +41,9 @@ module ::ScryfallPlugin
         
         Rails.logger.info "Scryfall: Customized inline onebox to '#{card_name}'"
       end
+      
+      elapsed_time = ((Time.now - start_time) * 1000).round(2)
+      Rails.logger.info "Scryfall: Completed inline onebox customization for post #{post.id} in #{elapsed_time}ms"
     end
 
     private

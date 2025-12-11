@@ -9,12 +9,17 @@ module ::ScryfallPlugin
     def self.process_raw_content(raw_content)
       return raw_content unless raw_content&.match?(CARD_SYNTAX_REGEX)
 
+      start_time = Time.now
       Rails.logger.info "Scryfall: Processing raw content with [[ syntax"
       
-      raw_content.gsub(CARD_SYNTAX_REGEX) do |match|
+      result = raw_content.gsub(CARD_SYNTAX_REGEX) do |match|o |match|
         card_name = $1.strip
         scryfall_url(card_name)
       end
+      
+      elapsed_time = ((Time.now - start_time) * 1000).round(2)
+      Rails.logger.info "Scryfall: Completed raw content processing in #{elapsed_time}ms"
+      result
     end
 
     def self.scryfall_url(card_name)
@@ -34,6 +39,7 @@ module ::ScryfallPlugin
     def self.resolve_to_card_url(search_url)
       require 'final_destination'
       
+      start_time = Time.now
       begin
         final_url = FinalDestination.new(
           search_url,
@@ -43,12 +49,16 @@ module ::ScryfallPlugin
         ).resolve
         
         if final_url && final_url.to_s =~ %r{scryfall\.com/card/}
+          elapsed_time = ((Time.now - start_time) * 1000).round(2)
+          Rails.logger.info "Scryfall: Resolved card URL in #{elapsed_time}ms"
           return final_url.to_s
         end
       rescue => e
         Rails.logger.warn "Scryfall: Failed to resolve card URL: #{e.message}"
       end
       
+      elapsed_time = ((Time.now - start_time) * 1000).round(2)
+      Rails.logger.info "Scryfall: URL resolution completed in #{elapsed_time}ms (no card URL found)"
       nil
     end
   end
