@@ -4,7 +4,7 @@ require 'cgi'
 
 module ::ScryfallPlugin
   class CardHandler
-    CARD_SYNTAX_REGEX = /(?:\\?\[){2}([^\]]+)(?:\\?\]){2}/
+    CARD_SYNTAX_REGEX = /(?:\\*\[){2}(.+?)(?:\\*\]){2}/
 
     def self.process_raw_content(raw_content)
       return raw_content unless raw_content&.match?(CARD_SYNTAX_REGEX)
